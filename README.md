@@ -7,8 +7,8 @@
 
 <p align="center">
   <a href="https://norvitech.com"><img alt="NorviTech Suite" src="https://img.shields.io/badge/NorviTech-Suite-FD8024.svg"></a>
-  <a href="https://github.com/spencercnorton/norvi-os/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/spencercnorton/norvi-os/actions/workflows/ci.yml/badge.svg"></a>
-  <a href="https://github.com/spencercnorton/norvi-os/tags"><img alt="Latest release" src="https://img.shields.io/github/v/tag/spencercnorton/norvi-os?label=release&sort=semver"></a>
+  <a href="https://github.com/spencernorton/norvi-os/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/spencernorton/norvi-os/actions/workflows/ci.yml/badge.svg"></a>
+  <a href="https://github.com/spencernorton/norvi-os/tags"><img alt="Latest release" src="https://img.shields.io/github/v/tag/spencercnorton/norvi-os?label=release&sort=semver"></a>
   <a href="#install"><img alt="Install with APT" src="https://img.shields.io/badge/install-APT-2D2D2D.svg"></a>
   <a href="LICENSE"><img alt="Licence" src="https://img.shields.io/badge/licence-GPL--3.0--or--later-blue.svg"></a>
   <a href="https://buy.stripe.com/8x26oH2U44f65TRe574wM04"><img alt="Donate" src="https://img.shields.io/badge/donate-Stripe-635bff.svg?logo=stripe&logoColor=white"></a>
@@ -76,16 +76,16 @@ they are, so nothing on this page is a mystery.
 
 | On screen | Extension | Origin |
 |---|---|---|
-| The dock, centred at the bottom, blurred, and the app launcher that opens from it, with drawers you create from a right-click | [XDock](https://github.com/spencercnorton/xdock) | NorviTech fork of [Dash to Dock](https://github.com/micheleg/dash-to-dock), *published* |
-| The blur behind menus and windows, with rounded corners | [Blur my Shell](https://github.com/aunetx/blur-my-shell) and [gnome-rounded-blur](https://github.com/spencercnorton/gnome-rounded-blur) | Blur my Shell as upstream releases it (blurred menus need v73 or later); gnome-rounded-blur is the Ubuntu build of [kancko/gnome-rounded-blur](https://github.com/kancko/gnome-rounded-blur), *published* |
-| Named workspaces on the left of the top bar | [Workspace Bar](https://github.com/spencercnorton/workspace-bar) | NorviTech, *published* |
-| The top bar that turns transparent over the desktop, at an opacity measured from the wallpaper | [Transparent Top Bar (Auto)](https://github.com/spencercnorton/transparent-top-bar) | NorviTech fork of [Transparent Top Bar](https://github.com/lamarios/gnome-shell-extension-transparent-top-bar), *published* |
+| The dock, centred at the bottom, blurred, and the app launcher that opens from it, with drawers you create from a right-click | [XDock](https://github.com/spencernorton/xdock) | NorviTech fork of [Dash to Dock](https://github.com/micheleg/dash-to-dock), *published* |
+| The blur behind menus and windows, with rounded corners | [Blur my Shell](https://github.com/aunetx/blur-my-shell) and [gnome-rounded-blur](https://github.com/spencernorton/gnome-rounded-blur) | Blur my Shell as upstream releases it (blurred menus need v73 or later); gnome-rounded-blur is the Ubuntu build of [kancko/gnome-rounded-blur](https://github.com/kancko/gnome-rounded-blur), *published* |
+| Named workspaces on the left of the top bar | [Workspace Bar](https://github.com/spencernorton/workspace-bar) | NorviTech, *published* |
+| The top bar that turns transparent over the desktop, at an opacity measured from the wallpaper | [Transparent Top Bar (Auto)](https://github.com/spencernorton/transparent-top-bar) | NorviTech fork of [Transparent Top Bar](https://github.com/lamarios/gnome-shell-extension-transparent-top-bar), *published* |
 | The weather in the top bar and its forecast panel | GEweather | NorviTech fork of [SimpleWeather](https://github.com/romanlefler/SimpleWeather) |
 | The clock on the right of the top bar | Move Clock | [Third-party](https://extensions.gnome.org/extension/2/move-clock/), unchanged |
-| A system menu that shows only the power button | [Power Only Quick Settings](https://github.com/spencercnorton/power-only-quicksettings) | NorviTech, *published* |
-| The large clock and weather on the lock screen | [Lock Screen Suite](https://github.com/spencercnorton/lock-screen-suite) | NorviTech, *published* |
-| Per-monitor wallpapers and rotation | [Wallpaper Suite](https://github.com/spencercnorton/wallpaper-suite) | NorviTech, *published* |
-| Sticky notes that come back where you left them | [XNote](https://github.com/spencercnorton/xnote) and [XNote Placement](https://github.com/spencercnorton/xnote-placement) | NorviTech, *published* |
+| A system menu that shows only the power button | [Power Only Quick Settings](https://github.com/spencernorton/power-only-quicksettings) | NorviTech, *published* |
+| The large clock and weather on the lock screen | [Lock Screen Suite](https://github.com/spencernorton/lock-screen-suite) | NorviTech, *published* |
+| Per-monitor wallpapers and rotation | [Wallpaper Suite](https://github.com/spencernorton/wallpaper-suite) | NorviTech, *published* |
+| Sticky notes that come back where you left them | [XNote](https://github.com/spencernorton/xnote) and [XNote Placement](https://github.com/spencernorton/xnote-placement) | NorviTech, *published* |
 
 <p align="center">
   <img alt="The dock's app launcher: clicking the first dock button opens a panel with the user's name, a search field and recently used apps; All Apps fills the grid, and typing note narrows it to XNote and Text Editor before the panel closes." src="docs/screenshots/launcher.png" width="900">
@@ -113,10 +113,10 @@ repository:
 
 | App | What it is |
 |---|---|
-| [Helios](https://github.com/spencercnorton/helios) | A native desktop for coding agents: Claude Code, OpenAI Codex and OpenRouter |
-| [XNote](https://github.com/spencercnorton/xnote) | Sticky notes that stay on your desktop |
-| [XNote Placement](https://github.com/spencercnorton/xnote-placement) | A GNOME Shell extension that puts each XNote note back where you left it |
-| [SnipSnap](https://github.com/spencercnorton/snipsnap) | Screenshot any region of any monitor on GNOME Wayland |
+| [Helios](https://github.com/spencernorton/helios) | A native desktop for coding agents: Claude Code, OpenAI Codex and OpenRouter |
+| [XNote](https://github.com/spencernorton/xnote) | Sticky notes that stay on your desktop |
+| [XNote Placement](https://github.com/spencernorton/xnote-placement) | A GNOME Shell extension that puts each XNote note back where you left it |
+| [SnipSnap](https://github.com/spencernorton/snipsnap) | Screenshot any region of any monitor on GNOME Wayland |
 
 
 ## Install
@@ -173,7 +173,7 @@ The branding and the glass are not packaged yet. Install them from this
 repository:
 
 ```bash
-git clone https://github.com/spencercnorton/norvi-os.git
+git clone https://github.com/spencernorton/norvi-os.git
 cd norvi-os
 sudo ./install.sh              # boot splash, login screen and About logo, from the next boot
 ./desktop/install-desktop.sh   # window glass for your user; no sudo
@@ -229,8 +229,8 @@ Nothing leaves the machine: neither installer uses the network.
 
 ## Contributing and support
 
-- Bugs and feature requests: [open an issue](https://github.com/spencercnorton/norvi-os/issues/new/choose). Questions: [Discussions](https://github.com/spencercnorton/norvi-os/discussions).
-- Security reports: [private vulnerability reporting](https://github.com/spencercnorton/norvi-os/security/advisories/new) — see [SECURITY.md](SECURITY.md). There is no e-mail address; that is deliberate.
+- Bugs and feature requests: [open an issue](https://github.com/spencernorton/norvi-os/issues/new/choose). Questions: [Discussions](https://github.com/spencernorton/norvi-os/discussions).
+- Security reports: [private vulnerability reporting](https://github.com/spencernorton/norvi-os/security/advisories/new) — see [SECURITY.md](SECURITY.md). There is no e-mail address; that is deliberate.
 - Pull requests are welcome; read [CONTRIBUTING.md](CONTRIBUTING.md) first — changes are reviewed and merged on GitHub, then shipped in tagged releases.
 - If NorviOS saves you time, you can [support its development](https://buy.stripe.com/8x26oH2U44f65TRe574wM04).
 
@@ -266,14 +266,14 @@ terms, which do not allow modifying it or using it to brand another product.
 </p>
 
 <p align="center">
-  <a href="https://github.com/spencercnorton/helios">Helios</a> ·
-  <a href="https://github.com/spencercnorton/bitagent">BitAgent</a> ·
-  <a href="https://github.com/spencercnorton/xnote">XNote</a> ·
-  <a href="https://github.com/spencercnorton/xnote-placement">XNote Placement</a> ·
-  <a href="https://github.com/spencercnorton/snipsnap">SnipSnap</a> ·
-  <a href="https://github.com/spencercnorton/conductor">Conductor</a> ·
-  <a href="https://github.com/spencercnorton/norvi-os">NorviOS</a> ·
-  <a href="https://github.com/spencercnorton/indigo">Indigo</a> ·
-  <a href="https://github.com/spencercnorton/roadtrack">Road Track</a> ·
+  <a href="https://github.com/spencernorton/helios">Helios</a> ·
+  <a href="https://github.com/spencernorton/bitagent">BitAgent</a> ·
+  <a href="https://github.com/spencernorton/xnote">XNote</a> ·
+  <a href="https://github.com/spencernorton/xnote-placement">XNote Placement</a> ·
+  <a href="https://github.com/spencernorton/snipsnap">SnipSnap</a> ·
+  <a href="https://github.com/spencernorton/conductor">Conductor</a> ·
+  <a href="https://github.com/spencernorton/norvi-os">NorviOS</a> ·
+  <a href="https://github.com/spencernorton/indigo">Indigo</a> ·
+  <a href="https://github.com/spencernorton/roadtrack">Road Track</a> ·
   <a href="https://norvitech.com">norvitech.com</a>
 </p>
