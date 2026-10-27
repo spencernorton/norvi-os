@@ -31,7 +31,9 @@ jobs:
         with:
           persist-credentials: false
       - name: Contrast
-        run: python3 desktop/check_contrast.py
+        run: |
+          python3 desktop/check_contrast.py
+          python3 desktop/check_glass_tokens.py
       - name: GTK stylesheets parse
         run: |
           python3 desktop/check_gtk_css.py

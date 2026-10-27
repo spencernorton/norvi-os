@@ -2,6 +2,13 @@
 
 All notable changes to NorviOS are documented here.
 
+## Unreleased
+
+- `desktop/glass-tokens.json` now owns the glass numbers (window alpha,
+  menu plate, blur strength, corners). A new gate,
+  `desktop/check_glass_tokens.py`, runs in CI and in the desktop installer
+  and refuses stylesheets that drift from the tokens.
+
 ## 1.4.0 — 2026-10-04
 
 - New `norvi-os` Debian package, a metapackage in the NorviTech APT
