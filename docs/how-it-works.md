@@ -86,6 +86,13 @@ is the subtle one: Blur my Shell's default hides the blur on the **focused**
 window, so the person evaluating the effect is the one person who cannot see
 it.
 
+**One file owns the numbers.** `desktop/glass-tokens.json` holds the
+window alpha, the menu plate, the blur strength, and the corners.
+`desktop/check_glass_tokens.py` runs in CI and in the desktop installer
+and refuses stylesheets that drift from it. Blur itself has one owner per
+surface: Blur my Shell for windows and menus, the wallpaper blur for the
+top bar, and each app only decides whether its own surfaces paint.
+
 **What turns to glass is decided by the apps, not by a list.** A surface shows
 through exactly when its author chose not to paint it. In practice header bars
 and page backgrounds go glass, while `.view` surfaces (text, lists, canvases)

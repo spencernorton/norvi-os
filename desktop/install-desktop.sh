@@ -198,6 +198,7 @@ NOTACTIVE
 fi
 
 python3 "$SRC/check_contrast.py" >/dev/null   # refuse to install an inaccessible alpha
+python3 "$SRC/check_glass_tokens.py" >/dev/null   # refuse drift from glass-tokens.json
 for v in $VERSIONS; do
   d="$CFG/gtk-$v.0/gtk.css"
   mkdir -p "$(dirname "$d")"   # not install -d: that resets an existing dir to 0755

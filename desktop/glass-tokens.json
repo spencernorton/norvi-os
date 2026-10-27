@@ -1,0 +1,11 @@
+{
+  "window_alpha": 0.72,
+  "menu_plate_alpha": 0.88,
+  "menu_plate_rgb": [45, 45, 50],
+  "blur_sigma": 30,
+  "blur_radius": 60,
+  "blur_brightness": 1.0,
+  "menu_sigma": 42,
+  "corner_menu_px": 20,
+  "corner_popup_px": 28
+}
