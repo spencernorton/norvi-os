@@ -9,6 +9,15 @@ All notable changes to NorviOS are documented here.
   `desktop/check_glass_tokens.py`, runs in CI and in the desktop installer
   and refuses stylesheets that drift from the tokens.
 
+## 1.4.1 — 2026-10-29
+
+- The desktop installer finds Blur my Shell under `XDG_DATA_HOME`.
+- CI installs its exact package in a clean Ubuntu VM, loads and exercises the
+  packaged desktop, verifies both installers and rollback, and runs piuparts.
+- Document the signed candidate channel currently carrying NorviOS.
+- Pin the verified upstream Blur my Shell v76 release, which fixes repeated
+  application-blur cleanup after settings changes.
+
 ## 1.4.0 — 2026-10-04
 
 - New `norvi-os` Debian package, a metapackage in the NorviTech APT
