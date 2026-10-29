@@ -16,10 +16,23 @@ for package in build-essential debhelper libmutter-18-dev libgtk-4-dev qt6-base-
     fi
 done
 apt-get update -qq
-apt-get install -y --no-install-recommends ca-certificates curl gnupg ubuntu-session gnome-shell \
-    gnome-control-center gdm3 plymouth-theme-spinner dconf-cli dbus-x11 \
-    libgl1-mesa-dri libegl-mesa0 gvfs at-spi2-core unzip python3 python3-gi \
-    gir1.2-gtk-4.0 piuparts debootstrap
+prerequisites=(ca-certificates curl gnupg ubuntu-session gnome-shell
+    gnome-control-center gdm3 plymouth-theme-spinner dconf-cli dbus-x11
+    libgl1-mesa-dri libegl-mesa0 gvfs at-spi2-core unzip python3 python3-gi
+    gir1.2-gtk-4.0 piuparts debootstrap)
+# APT does not classify every TLS connection-close error as retryable. Fetch
+# prerequisites into its verified cache first, reopening failed connections.
+# No product or maintainer script is executed by these download-only retries.
+downloaded=false
+for attempt in 1 2 3; do
+    if apt-get install -y --download-only --no-install-recommends "${prerequisites[@]}"; then
+        downloaded=true
+        break
+    fi
+    echo "Prerequisite download attempt $attempt failed"
+done
+$downloaded || fail 'Ubuntu prerequisite downloads did not complete'
+apt-get install -y --no-download --no-install-recommends "${prerequisites[@]}"
 if [ -d archive ]; then
     # The same setup.sh and authenticated APT path, served from these exact
     # unpublished bytes. Only this guest trusts their disposable signing key.
