@@ -46,6 +46,8 @@ def main():
     parser.add_argument("--archive", type=Path, help="Optional signed APT tree to qualify before publication")
     parser.add_argument("--timeout", type=int, default=2400)
     args = parser.parse_args()
+    if not args.candidate and not args.archive:
+        parser.error("--candidate from the producer or --archive is required; the guest never builds its own substitute")
     args.out = args.out.resolve()
     args.out.mkdir(parents=True, exist_ok=True)
     args.cache.mkdir(parents=True, exist_ok=True)

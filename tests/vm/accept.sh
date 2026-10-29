@@ -9,11 +9,17 @@ exec > >(tee evidence/acceptance.log) 2>&1
 fail() { echo "FAIL: $*" >&2; exit 1; }
 test "$(cat /sys/class/dmi/id/product_name)" = 'Norvi Acceptance' || fail 'acceptance requires the disposable QEMU guest'
 test -d /run/systemd/system || fail 'systemd is not running'
+dpkg-query -W > evidence/packages-before.tsv
+for package in build-essential debhelper libmutter-18-dev libgtk-4-dev qt6-base-dev; do
+    if dpkg-query -W -f='${db:Status-Status}' "$package" 2>/dev/null | grep -qx installed; then
+        fail "developer package $package was preinstalled in the clean guest"
+    fi
+done
 apt-get update -qq
 apt-get install -y --no-install-recommends ca-certificates curl gnupg ubuntu-session gnome-shell \
     gnome-control-center gdm3 plymouth-theme-spinner dconf-cli dbus-x11 \
     libgl1-mesa-dri libegl-mesa0 gvfs at-spi2-core unzip python3 python3-gi \
-    gir1.2-gtk-4.0 debhelper build-essential piuparts debootstrap
+    gir1.2-gtk-4.0 piuparts debootstrap
 if [ -d archive ]; then
     # The same setup.sh and authenticated APT path, served from these exact
     # unpublished bytes. Only this guest trusts their disposable signing key.
@@ -38,10 +44,8 @@ apt-cache policy norvi-os > evidence/package-policy.txt
 if [ ! -f candidate.deb ] && [ -d archive ]; then
     apt-get download "norvi-os=$(dpkg-query -W -f='${Version}' norvi-os)"
     mv norvi-os_*_all.deb candidate.deb
-elif [ ! -f candidate.deb ]; then
-    (cd source && scripts/build.sh /tmp/accept/build)
-    cp build/norvi-os_*_all.deb candidate.deb
 fi
+test -s candidate.deb || fail 'the producer candidate artifact is required'
 sha256sum candidate.deb > evidence/candidate.sha256
 apt-get install -y --reinstall ./candidate.deb
 test "$(dpkg-query -W -f='${Version}' norvi-os)" = "$(dpkg-deb -f candidate.deb Version)"
@@ -63,7 +67,8 @@ systemctl status gdm3 --no-pager > evidence/gdm-status.txt
 curl -fLsS 'https://github.com/aunetx/blur-my-shell/releases/download/v73/blur-my-shell%40aunetx.shell-extension.zip' -o blur-my-shell.zip
 printf '%s\n' '237a59e04b3cffd3fb86aa3cd18b32f929c61e2af8dcc781379364a59d53b129  blur-my-shell.zip' | sha256sum -c -
 chown demo:demo evidence
-GI_TYPELIB_PATH="/usr/lib/$(dpkg-architecture -qDEB_HOST_MULTIARCH)/mutter-18"
+multiarch=$(python3 -c 'import sysconfig; print(sysconfig.get_config_var("MULTIARCH"))')
+GI_TYPELIB_PATH="/usr/lib/$multiarch/mutter-18"
 export GI_TYPELIB_PATH
 runuser -u demo -- bash source/tests/vm/session.sh
 
