@@ -2,9 +2,9 @@
 # glass alpha keeps primary text above WCAG AA, both stylesheets parse with the
 # real GTK 3 and GTK 4 parsers, the desktop installer's dconf-list surgery and
 # its uninstall rules hold, the shell scripts are clean, and the norvi-os
-# metapackage builds twice byte for byte. The installers change
-# boot and login configuration, so they are exercised on a virtual machine
-# before a release, not here. No secrets, read-only token, GitHub-owned actions
+# metapackage builds twice byte for byte. A clean VM then installs that exact
+# package, loads the packaged desktop and exercises both installers and rollback.
+# No secrets, read-only token, GitHub-owned actions
 # pinned by commit.
 name: CI
 on:
@@ -15,7 +15,7 @@ on:
 permissions:
   contents: read
 jobs:
-  checks:
+  package:
     container: ubuntu:26.04@sha256:da6fc2be547864451aa253836dd926da33623312df4a9a243e35dc877c378a78
     runs-on: ubuntu-24.04
     timeout-minutes: 10
@@ -49,7 +49,7 @@ jobs:
             bash desktop/test-install-desktop.sh
           fi
       - name: Shell scripts
-        run: shellcheck -S warning install.sh uninstall.sh desktop/*.sh scripts/build.sh
+        run: shellcheck -S warning install.sh uninstall.sh desktop/*.sh scripts/build.sh tests/vm/*.sh
       - name: Build the package twice and compare
         run: |
           git config --system --add safe.directory "$GITHUB_WORKSPACE"
@@ -67,3 +67,45 @@ jobs:
           path: dist/deb/
           if-no-files-found: error
           retention-days: 14
+  runtime:
+    needs: package
+    runs-on: ubuntu-24.04
+    timeout-minutes: 50
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: VM prerequisites
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq --no-install-recommends qemu-system-x86 qemu-utils genisoimage openssh-client
+          if [ -e /dev/kvm ]; then sudo chmod a+rw /dev/kvm; fi
+      - uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
+        with:
+          path: ~/.cache/norvi-vm
+          key: ubuntu-resolute-cloud-release-20261016-v1
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: norvi-os-debian-candidate
+          path: candidate
+      - name: Install, load, operate and roll back the candidate
+        run: |
+          (cd candidate && sha256sum --check SHA256SUMS.txt)
+          python3 tests/vm/run.py --candidate "$(find candidate -name 'norvi-os_*_all.deb' -print -quit)" --out vm-evidence
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: clean-vm-evidence
+          path: vm-evidence/
+          if-no-files-found: error
+          retention-days: 14
+  checks:
+    if: always()
+    needs: [package, runtime]
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Require package and VM acceptance
+        env:
+          PACKAGE_RESULT: ${{ needs.package.result }}
+          RUNTIME_RESULT: ${{ needs.runtime.result }}
+        run: test "$PACKAGE_RESULT" = success && test "$RUNTIME_RESULT" = success

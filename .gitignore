@@ -1,4 +1,6 @@
 dist/
+__pycache__/
+vm-evidence/
 debian/.debhelper/
 debian/files
 debian/norvi-os/

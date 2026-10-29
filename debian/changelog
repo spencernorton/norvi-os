@@ -1,3 +1,10 @@
+norvi-os (1.4.1) resolute; urgency=medium
+
+  * Qualify the candidate package and branding in a disposable Ubuntu VM.
+  * Find the user's Blur my Shell installation in XDG_DATA_HOME.
+
+ -- NorviTech <apt@globalentry.systems>  Thu, 29 Oct 2026 00:00:00 +0000
+
 norvi-os (1.4.0) resolute; urgency=medium
 
   * New norvi-os metapackage. It depends on norvi-archive-keyring and

@@ -8,7 +8,7 @@ set -euo pipefail
 
 SRC="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 CFG="${XDG_CONFIG_HOME:-$HOME/.config}"
-BMS="$HOME/.local/share/gnome-shell/extensions/blur-my-shell@aunetx"
+BMS="${XDG_DATA_HOME:-$HOME/.local/share}/gnome-shell/extensions/blur-my-shell@aunetx"
 # A distribution package installs it system-wide instead; the settings are per-user either way.
 [ -d "$BMS" ] || BMS=/usr/share/gnome-shell/extensions/blur-my-shell@aunetx
 APPS=org.gnome.shell.extensions.blur-my-shell.applications

@@ -131,10 +131,14 @@ repository:
    curl -fsSL https://apt.norvitech.com/setup.sh | sudo sh
    ```
 
-2. Install NorviOS:
+2. NorviOS currently lives in the signed candidate channel. Add that channel
+   alongside the stable source installed by the keyring, then install it:
 
    ```bash
-   sudo apt install norvi-os
+   sudo sed 's/^Suites: resolute$/Suites: resolute-candidate/' \
+     /etc/apt/sources.list.d/norvi.sources | sudo tee /etc/apt/sources.list.d/norvi-candidate.sources > /dev/null
+   sudo apt update
+   sudo apt install -t resolute-candidate norvi-os
    ```
 
    `norvi-os` is a metapackage. It recommends the desktop components and apps —
@@ -143,6 +147,9 @@ repository:
    Placement, SnipSnap and Timecrate — and suggests Helios. It pins no
    versions, so each component updates on its own, and you can remove any one
    of them without removing the rest.
+
+   Candidate packages can change before promotion to stable. Their archive
+   signatures use the same keyring; this does not disable APT verification.
 
 3. Install [Blur my Shell](https://github.com/aunetx/blur-my-shell) v73 from
    its upstream release, checked against the release's SHA-256.
