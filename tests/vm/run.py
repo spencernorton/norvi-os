@@ -111,7 +111,7 @@ def main():
             run(*ssh, "sudo cloud-init status --wait", timeout=180)
             run(*ssh, "sudo sed -i 's|http://|https://|g' /etc/apt/sources.list.d/ubuntu.sources")
             run(*ssh, "sudo tee /etc/apt/apt.conf.d/99acceptance-proxy >/dev/null",
-                input='Acquire::https::Proxy "http://192.0.2.100:18888";\n', text=True)
+                input='Acquire::https::Proxy "http://192.0.2.100:18888";\nAcquire::Retries "3";\n', text=True)
             with tarfile.open(work / "inputs.tar", "w") as archive:
                 for item in args.source.resolve().iterdir():
                     if item.name not in {".git", "dist", ".venv", "node_modules"}:

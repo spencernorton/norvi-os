@@ -9,7 +9,9 @@ records its SHA-256. It never substitutes a separately built binary.
 overlay and SSH identity, boots systemd and runs `accept.sh`. QEMU uses KVM when
 available and records the accelerator. Its restricted user network forwards
 only SSH and an HTTPS proxy whose allowlist resolves exclusively to public
-addresses. Unknown origins and direct host access are negative controls. The
+addresses. The socket/pipe transport retains responses after client half-close;
+its regressions use actual kernel sockets and guestfwd subprocess pipes. APT
+retries individual transient downloads three times. Unknown origins and direct host access are negative controls. The
 guest uses real signed APT metadata; package policy, versions, checksums,
 GDM status, loaded extension paths, dconf/CSS comparisons and rollback results
 are retained. No SSH identity, guest disk or fixture private key is uploaded.

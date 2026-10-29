@@ -15,14 +15,20 @@ ALLOWED = {"archive.ubuntu.com", "security.ubuntu.com", "ports.ubuntu.com",
 
 
 def relay(left, right):
-    while True:
-        ready, _, _ = select.select([left, right], [], [], 90)
+    readers = {left, right}
+    while readers:
+        ready, _, _ = select.select(list(readers), [], [], 90)
         if not ready:
             return
         for source in ready:
             data = source.recv(65536)
             if not data:
-                return
+                readers.remove(source)
+                try:
+                    (right if source is left else left).shutdown(socket.SHUT_WR)
+                except OSError:
+                    pass
+                continue
             (right if source is left else left).sendall(data)
 
 
@@ -47,6 +53,7 @@ class Handler(socketserver.BaseRequestHandler):
     def handle(self):
         self.request.settimeout(90)
         header = b""
+        established = False
         try:
             while b"\r\n\r\n" not in header and len(header) < 8192:
                 data = self.request.recv(1)
@@ -69,8 +76,13 @@ class Handler(socketserver.BaseRequestHandler):
                 remote.settimeout(30)
                 remote.connect(address)
                 self.request.sendall(b"HTTP/1.1 200 Connection established\r\n\r\n")
+                established = True
                 relay(self.request, remote)
         except (OSError, ValueError, UnicodeError):
+            # A tunnel carries TLS bytes after CONNECT, never another HTTP
+            # response. On transport failure just close the established stream.
+            if established:
+                return
             try:
                 self.request.sendall(b"HTTP/1.1 502 Bad Gateway\r\nConnection: close\r\nContent-Length: 0\r\n\r\n")
             except OSError:
@@ -81,15 +93,18 @@ def forward(port):
     # QEMU starts one process per guest connection. stdin/stdout are the
     # virtual socket; the only real socket is this localhost proxy endpoint.
     with socket.create_connection(("127.0.0.1", port), timeout=30) as peer:
+        readers = [0, peer]
         while True:
-            ready, _, _ = select.select([0, peer], [], [], 90)
+            ready, _, _ = select.select(readers, [], [], 90)
             if not ready:
                 return
             for source in ready:
                 if source == 0:
                     data = os.read(0, 65536)
                     if not data:
-                        return
+                        readers.remove(0)
+                        peer.shutdown(socket.SHUT_WR)
+                        continue
                     peer.sendall(data)
                 else:
                     data = peer.recv(65536)

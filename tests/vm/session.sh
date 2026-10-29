@@ -18,7 +18,7 @@ gsettings set org.gnome.shell welcome-dialog-last-shown-version '999'
 gsettings set org.gnome.desktop.interface enable-animations false
 gsettings set org.gnome.shell enabled-extensions \
     "['acceptance@norvi.test', 'blur-my-shell@aunetx', 'xdock@spencercnorton.github.io', 'workspace-bar@spencercnorton.github.io', 'transparent-top-bar@spencercnorton.github.io', 'power-only-quicksettings@spencercnorton.github.io', 'lock-screen-suite@spencercnorton.github.io', 'wallpaper-suite@spencercnorton.github.io', 'xnote-placement@spencercnorton.github.io']"
-timeout --kill-after=10s 240s env G_DEBUG=fatal-criticals gnome-shell --headless --wayland --virtual-monitor 1280x800 > evidence/shell.log 2>&1 &
+timeout --foreground --kill-after=10s 240s env G_DEBUG=fatal-criticals gnome-shell --headless --wayland --virtual-monitor 1280x800 > evidence/shell.log 2>&1 &
 shell=$!
 trap 'kill "$shell" 2>/dev/null || true; wait "$shell" 2>/dev/null || true' EXIT
 for _ in $(seq 180); do
