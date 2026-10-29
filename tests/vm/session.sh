@@ -12,13 +12,13 @@ chmod 0700 "$XDG_RUNTIME_DIR"
 ext="$XDG_DATA_HOME/gnome-shell/extensions"
 mkdir -p "$ext/acceptance@norvi.test"
 cp source/tests/vm/session-probe/* "$ext/acceptance@norvi.test/"
-dbus-run-session -- bash -euo pipefail <<'SESSION'
+timeout --foreground --kill-after=10s 240s dbus-run-session -- bash -euo pipefail <<'SESSION'
 gnome-extensions install --force blur-my-shell.zip
 gsettings set org.gnome.shell welcome-dialog-last-shown-version '999'
 gsettings set org.gnome.desktop.interface enable-animations false
 gsettings set org.gnome.shell enabled-extensions \
     "['acceptance@norvi.test', 'blur-my-shell@aunetx', 'xdock@spencercnorton.github.io', 'workspace-bar@spencercnorton.github.io', 'transparent-top-bar@spencercnorton.github.io', 'power-only-quicksettings@spencercnorton.github.io', 'lock-screen-suite@spencercnorton.github.io', 'wallpaper-suite@spencercnorton.github.io', 'xnote-placement@spencercnorton.github.io']"
-timeout --foreground --kill-after=10s 240s env G_DEBUG=fatal-criticals gnome-shell --headless --wayland --virtual-monitor 1280x800 > evidence/shell.log 2>&1 &
+G_DEBUG=fatal-criticals gnome-shell --headless --wayland --virtual-monitor 1280x800 > evidence/shell.log 2>&1 &
 shell=$!
 source source/tests/vm/stop-shell.sh
 trap 'finish_shell "$?" "$shell" evidence/shell.exit' EXIT
