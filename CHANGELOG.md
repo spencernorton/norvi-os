@@ -15,6 +15,8 @@ All notable changes to NorviOS are documented here.
 - CI installs its exact package in a clean Ubuntu VM, loads and exercises the
   packaged desktop, verifies both installers and rollback, and runs piuparts.
 - Document the signed candidate channel currently carrying NorviOS.
+- Pin the verified upstream Blur my Shell v76 release, which fixes repeated
+  application-blur cleanup after settings changes.
 
 ## 1.4.0 — 2026-10-04
 

@@ -27,9 +27,9 @@ in three steps:
 ```bash
 curl -fsSL https://apt.norvitech.com/setup.sh | sudo sh   # checks the key fingerprint, installs norvi-archive-keyring
 sudo apt install norvi-os                                  # the metapackage: components and apps as Recommends
-curl -fsSLo blur-my-shell.zip https://github.com/aunetx/blur-my-shell/releases/download/v73/blur-my-shell%40aunetx.shell-extension.zip
-echo '237a59e04b3cffd3fb86aa3cd18b32f929c61e2af8dcc781379364a59d53b129  blur-my-shell.zip' | sha256sum --check
-gnome-extensions install --force blur-my-shell.zip         # Blur my Shell v73, the upstream release
+curl -fsSLo blur-my-shell.zip https://github.com/aunetx/blur-my-shell/releases/download/v76/blur-my-shell%40aunetx.shell-extension.zip
+echo 'fff4deaf74d384171241e2242c4034b4c2acbc9c516264d29ddbd34f7737da0e  blur-my-shell.zip' | sha256sum --check
+gnome-extensions install --force blur-my-shell.zip         # Blur my Shell v76, the upstream release
 ```
 
 `norvi-os` pins no versions: each component updates on its own through apt

@@ -77,7 +77,7 @@ they are, so nothing on this page is a mystery.
 | On screen | Extension | Origin |
 |---|---|---|
 | The dock, centred at the bottom, blurred, and the app launcher that opens from it, with drawers you create from a right-click | [XDock](https://github.com/spencernorton/xdock) | NorviTech fork of [Dash to Dock](https://github.com/micheleg/dash-to-dock), *published* |
-| The blur behind menus and windows, with rounded corners | [Blur my Shell](https://github.com/aunetx/blur-my-shell) and [gnome-rounded-blur](https://github.com/spencernorton/gnome-rounded-blur) | Blur my Shell as upstream releases it (blurred menus need v73 or later); gnome-rounded-blur is the Ubuntu build of [kancko/gnome-rounded-blur](https://github.com/kancko/gnome-rounded-blur), *published* |
+| The blur behind menus and windows, with rounded corners | [Blur my Shell](https://github.com/aunetx/blur-my-shell) and [gnome-rounded-blur](https://github.com/spencernorton/gnome-rounded-blur) | The checksum-pinned upstream Blur my Shell v76; gnome-rounded-blur is the Ubuntu build of [kancko/gnome-rounded-blur](https://github.com/kancko/gnome-rounded-blur), *published* |
 | Named workspaces on the left of the top bar | [Workspace Bar](https://github.com/spencernorton/workspace-bar) | NorviTech, *published* |
 | The top bar that turns transparent over the desktop, at an opacity measured from the wallpaper | [Transparent Top Bar (Auto)](https://github.com/spencernorton/transparent-top-bar) | NorviTech fork of [Transparent Top Bar](https://github.com/lamarios/gnome-shell-extension-transparent-top-bar), *published* |
 | The weather in the top bar and its forecast panel | GEweather | NorviTech fork of [SimpleWeather](https://github.com/romanlefler/SimpleWeather) |
@@ -151,14 +151,14 @@ repository:
    Candidate packages can change before promotion to stable. Their archive
    signatures use the same keyring; this does not disable APT verification.
 
-3. Install [Blur my Shell](https://github.com/aunetx/blur-my-shell) v73 from
+3. Install [Blur my Shell](https://github.com/aunetx/blur-my-shell) v76 from
    its upstream release, checked against the release's SHA-256.
-   extensions.gnome.org still offers v72 for GNOME 50, and blurred menus need
-   v73:
+   This version includes the upstream fix for repeated application-blur
+   cleanup after settings changes:
 
    ```bash
-   curl -fsSLo blur-my-shell.zip https://github.com/aunetx/blur-my-shell/releases/download/v73/blur-my-shell%40aunetx.shell-extension.zip
-   echo '237a59e04b3cffd3fb86aa3cd18b32f929c61e2af8dcc781379364a59d53b129  blur-my-shell.zip' | sha256sum --check
+   curl -fsSLo blur-my-shell.zip https://github.com/aunetx/blur-my-shell/releases/download/v76/blur-my-shell%40aunetx.shell-extension.zip
+   echo 'fff4deaf74d384171241e2242c4034b4c2acbc9c516264d29ddbd34f7737da0e  blur-my-shell.zip' | sha256sum --check
    gnome-extensions install --force blur-my-shell.zip
    ```
 

@@ -32,6 +32,38 @@ fi
 chroot "$base" sh < evidence/setup.sh > evidence/piuparts-bootstrap.log 2>&1 || {
     cat evidence/piuparts-bootstrap.log; exit 1;
 }
+if [ -d archive ]; then
+    # The outer guest exercised setup.sh with the branch key. Filesystem
+    # qualification must leave every packaged byte intact: use separate APT
+    # fixture sources/trust in this chroot instead of rewriting an owned key.
+    version=$(dpkg-query -W -f='${Version}' norvi-archive-keyring)
+    apt-get download "norvi-archive-keyring=$version"
+    keyring_deb=$(find . -maxdepth 1 -name 'norvi-archive-keyring_*_all.deb' -print -quit)
+    original=$(mktemp -d)
+    dpkg-deb -x "$keyring_deb" "$original"
+    expected=$(python3 - <<'PY'
+import re
+from pathlib import Path
+pins = re.findall(r'^FINGERPRINT=([0-9A-Fa-f]{40})$', Path('evidence/setup.sh').read_text(), re.MULTILINE)
+assert len(pins) == 1, 'bootstrap must name exactly one production trust fingerprint'
+print(pins[0].upper())
+PY
+    )
+    embedded=$(gpg --batch --show-keys --with-colons "$original/usr/share/keyrings/norvi-archive-keyring.gpg" 2>/dev/null | awk -F: '$1=="fpr" {print $10; exit}')
+    test "$embedded" = "$expected"
+    cp "$original/usr/share/keyrings/norvi-archive-keyring.gpg" "$base/usr/share/keyrings/"
+    rm -rf "$original"
+    rm "$base/etc/apt/apt.conf.d/99acceptance-archive-key"
+    install -d "$base/usr/local/share/keyrings" "$base/etc/apt/acceptance-sources.d"
+    cp /tmp/accept/fixture-signing.gpg "$base/usr/local/share/keyrings/acceptance.gpg"
+    for file in norvi.sources norvi-candidate.sources; do
+        sed 's|/usr/share/keyrings/norvi-archive-keyring.gpg|/usr/local/share/keyrings/acceptance.gpg|' \
+            "$base/etc/apt/sources.list.d/$file" > "$base/etc/apt/acceptance-sources.d/$file"
+    done
+    printf '%s\n' 'Dir::Etc::sourceparts "/etc/apt/acceptance-sources.d";' > "$base/etc/apt/apt.conf.d/99acceptance-piuparts-sources"
+    chroot "$base" dpkg --verify norvi-archive-keyring > evidence/piuparts-keyring-verify.txt
+    test ! -s evidence/piuparts-keyring-verify.txt
+fi
 umount "$base/dev"
 trap - EXIT
 piuparts --defaults=ubuntu --distribution=resolute \

@@ -28,6 +28,8 @@ if [ -d archive ]; then
 fi
 curl -fLsS https://apt.norvitech.com/setup.sh -o evidence/setup.sh
 sh < evidence/setup.sh
+test "$(dpkg-query -S /etc/apt/sources.list.d/norvi.sources)" = 'norvi-archive-keyring: /etc/apt/sources.list.d/norvi.sources'
+test "$(dpkg-query -S /usr/share/keyrings/norvi-archive-keyring.gpg)" = 'norvi-archive-keyring: /usr/share/keyrings/norvi-archive-keyring.gpg'
 # Qualification also exercises packages waiting in the signed candidate
 # channel. This separate source never changes the keyring-owned stable source.
 sed 's/^Suites: resolute$/Suites: resolute-candidate/' /etc/apt/sources.list.d/norvi.sources > /etc/apt/sources.list.d/norvi-candidate.sources
@@ -64,8 +66,8 @@ for _ in $(seq 30); do
 done
 pgrep -f 'gnome-shell --mode=gdm' > evidence/greeter-pids.txt || fail 'GDM did not launch its GNOME greeter'
 systemctl status gdm3 --no-pager > evidence/gdm-status.txt
-curl -fLsS 'https://github.com/aunetx/blur-my-shell/releases/download/v73/blur-my-shell%40aunetx.shell-extension.zip' -o blur-my-shell.zip
-printf '%s\n' '237a59e04b3cffd3fb86aa3cd18b32f929c61e2af8dcc781379364a59d53b129  blur-my-shell.zip' | sha256sum -c -
+curl -fLsS 'https://github.com/aunetx/blur-my-shell/releases/download/v76/blur-my-shell%40aunetx.shell-extension.zip' -o blur-my-shell.zip
+printf '%s\n' 'fff4deaf74d384171241e2242c4034b4c2acbc9c516264d29ddbd34f7737da0e  blur-my-shell.zip' | sha256sum -c -
 chown demo:demo evidence
 multiarch=$(python3 -c 'import sysconfig; print(sysconfig.get_config_var("MULTIARCH"))')
 GI_TYPELIB_PATH="/usr/lib/$multiarch/mutter-18"

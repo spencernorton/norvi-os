@@ -88,7 +88,7 @@ def main():
         proxy = Proxy()
         forward = shlex.join([sys.executable, str(Path(__file__).with_name("network.py").resolve()), str(proxy.server_address[1])])
         result["acceleration"] = accel
-        ssh = ["ssh", "-i", str(key), "-p", str(port), "-o", "IdentitiesOnly=yes", "-o", "StrictHostKeyChecking=no",
+        ssh = ["ssh", "-F", "/dev/null", "-o", "ForwardAgent=no", "-i", str(key), "-p", str(port), "-o", "IdentitiesOnly=yes", "-o", "StrictHostKeyChecking=no",
                "-o", "UserKnownHostsFile=/dev/null", "-o", "LogLevel=ERROR", "-o", "ConnectTimeout=5", "demo@127.0.0.1"]
         vm = sp.Popen(["qemu-system-x86_64", "-accel", accel, "-cpu", "host" if accel == "kvm" else "max",
                        "-smbios", "type=1,manufacturer=QEMU,product=Norvi Acceptance",

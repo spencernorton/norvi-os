@@ -17,8 +17,11 @@ are retained. No SSH identity, guest disk or fixture private key is uploaded.
 The route installs the signed candidate-channel metapackage, upgrades it with
 the workflow's exact candidate, loads all seven packaged extensions from
 `/usr/share` in a real private GNOME session and opens Quick Settings and the
-application launcher. Blur my Shell v73 uses the documented upstream release
-and checksum. The actual normal-user desktop installer must preserve existing
+application launcher. It launches the installed XNote, SnipSnap settings and
+Timecrate desktop entries and requires real mapped GTK/Qt surfaces in the
+synthetic user profile. Blur my Shell v76 uses the documented upstream release
+and checksum. Native criticals are fatal; extension teardown and compositor
+shutdown logs are checked too. The actual normal-user desktop installer must preserve existing
 CSS and dconf through two installs and two uninstalls. The root installer must
 populate the initramfs and greeter database and restore the original GDM file,
 Plymouth alternative, About logos and diversion list through two cycles. APT
