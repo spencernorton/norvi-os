@@ -8,14 +8,14 @@
 <p align="center">
   <a href="https://norvitech.com"><img alt="NorviTech Suite" src="https://img.shields.io/badge/NorviTech-Suite-FD8024.svg"></a>
   <a href="https://github.com/spencernorton/norvi-os/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/spencernorton/norvi-os/actions/workflows/ci.yml/badge.svg"></a>
-  <a href="https://github.com/spencernorton/norvi-os/tags"><img alt="Latest release" src="https://img.shields.io/github/v/tag/spencercnorton/norvi-os?label=release&sort=semver"></a>
+  <a href="https://github.com/spencernorton/norvi-os/tags"><img alt="Latest release" src="https://img.shields.io/github/v/tag/spencernorton/norvi-os?label=release&sort=semver"></a>
   <a href="#install"><img alt="Install with APT" src="https://img.shields.io/badge/install-APT-2D2D2D.svg"></a>
   <a href="LICENSE"><img alt="Licence" src="https://img.shields.io/badge/licence-GPL--3.0--or--later-blue.svg"></a>
   <a href="https://buy.stripe.com/8x26oH2U44f65TRe574wM04"><img alt="Donate" src="https://img.shields.io/badge/donate-Stripe-635bff.svg?logo=stripe&logoColor=white"></a>
 </p>
 
 <p align="center">
-  <img alt="The NorviOS desktop on Ubuntu 26.04: a transparent top bar with named workspaces on the left and the weather and clock on the right, three sticky notes pinned to the right edge, a Files window rendered as frosted glass, and a centred dock with a blurred plate at the bottom." src="docs/screenshots/desktop.png" width="900">
+  <picture><source media="(prefers-reduced-motion: reduce)" srcset="docs/screenshots/desktop.png"><img src="docs/demos/launcher.gif" alt="Open the NorviOS app launcher, browse its application grid and search for a note app on the demonstration desktop." width="900"></picture>
 </p>
 
 Every screenshot here was captured on a fresh Ubuntu 26.04 virtual machine with a demo account, a generated wallpaper and invented notes; nothing personal.
@@ -25,6 +25,8 @@ with GNOME 50 on Wayland, rebranded from the first boot frame and restyled so
 GTK windows read as frosted glass. It is not a separate distribution. This
 repository is a layer you install on an existing Ubuntu desktop, and remove
 again, with one command for each half.
+
+[Recordings and still images](docs/demos/README.md).
 
 ## What it does
 
@@ -88,15 +90,11 @@ they are, so nothing on this page is a mystery.
 | Sticky notes that come back where you left them | [XNote](https://github.com/spencernorton/xnote) and [XNote Placement](https://github.com/spencernorton/xnote-placement) | NorviTech, *published* |
 
 <p align="center">
-  <img alt="The dock's app launcher: clicking the first dock button opens a panel with the user's name, a search field and recently used apps; All Apps fills the grid, and typing note narrows it to XNote and Text Editor before the panel closes." src="docs/screenshots/launcher.png" width="900">
+  <picture><source media="(prefers-reduced-motion: reduce)" srcset="docs/demos/drawers-still.png"><img src="docs/demos/drawers.gif" alt="Making a drawer in the launcher: right-clicking All Apps offers New Drawer, the name Writing is typed into the sidebar, Text Editor and XNote are dragged onto the new Writing drawer, and opening it shows just those two apps." width="600"></picture>
 </p>
 
 <p align="center">
-  <img alt="Making a drawer in the launcher: right-clicking All Apps offers New Drawer, the name Writing is typed into the sidebar, Text Editor and XNote are dragged onto the new Writing drawer, and opening it shows just those two apps." src="docs/screenshots/drawers.png" width="600">
-</p>
-
-<p align="center">
-  <img alt="Clicking through the named workspaces in the top bar: Home with the Files window and notes, Code with a text editor, Media with an empty music folder, then back to Home. Occupied workspaces are bright, empty ones dim." src="docs/screenshots/workspaces.png" width="900">
+  <picture><source media="(prefers-reduced-motion: reduce)" srcset="docs/demos/workspaces-still.png"><img src="docs/demos/workspaces.gif" alt="Clicking through the named workspaces in the top bar: Home with the Files window and notes, Code with a text editor, Media with an empty music folder, then back to Home. Occupied workspaces are bright, empty ones dim." width="900"></picture>
 </p>
 
 <p align="center">
