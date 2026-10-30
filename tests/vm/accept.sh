@@ -62,7 +62,7 @@ if [ ! -f candidate.deb ] && [ -d archive ]; then
 fi
 test -s candidate.deb || fail 'the producer candidate artifact is required'
 sha256sum candidate.deb > evidence/candidate.sha256
-apt-get install -y --reinstall ./candidate.deb
+bash source/tests/vm/install-candidate.sh ./candidate.deb
 test "$(dpkg-query -W -f='${Version}' norvi-os)" = "$(dpkg-deb -f candidate.deb Version)"
 dpkg --audit > evidence/dpkg-audit.txt
 test ! -s evidence/dpkg-audit.txt
@@ -121,11 +121,11 @@ echo 'PASS: branding installs twice and restores the original system state twice
 
 # A metapackage must remain independently removable; its recommended components
 # stay installed while the metapackage passes each package-manager transition.
-apt-get install -y --reinstall ./candidate.deb
+bash source/tests/vm/install-candidate.sh ./candidate.deb
 apt-get remove -y norvi-os
 test "$(dpkg-query -W -f='${db:Status-Status}' gnome-shell-extension-xdock)" = installed
 apt-get purge -y norvi-os
-apt-get install -y ./candidate.deb
+bash source/tests/vm/install-candidate.sh ./candidate.deb
 dpkg --audit > evidence/dpkg-audit-final.txt
 test ! -s evidence/dpkg-audit-final.txt
 dpkg-query -W > evidence/packages-final.tsv

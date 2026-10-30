@@ -40,9 +40,10 @@ shellcheck -S warning install.sh uninstall.sh desktop/*.sh scripts/build.sh   # 
 scripts/build.sh                               # the norvi-os metapackage into dist/
 ```
 
-The installers change boot and login configuration, so they are not run in
-CI. Try a change on a virtual machine with a fresh Ubuntu 26.04 desktop, and
-say in the pull request what you ran and what you saw.
+CI runs both installers inside a fresh Ubuntu 26.04 VM and checks rollback,
+the packaged desktop and its apps. Compositor failures, including shutdown
+crashes, fail acceptance. For desktop changes, also say in the pull request
+which visible surfaces you checked in a disposable session.
 
 - Never edit an Ubuntu-owned file in place. Use the override point Ubuntu or
   Debian provides — `update-alternatives`, a local `dpkg-divert`, a conffile,
