@@ -5,6 +5,8 @@ All notable changes to NorviOS are documented here.
 ## Unreleased
 
 - Fail VM acceptance on unexpected compositor exit, including shutdown crashes.
+- Qualify new producer bytes when their version is already in candidate, while
+  rejecting older versions and checking the installed file manifest.
 - `desktop/glass-tokens.json` now owns the glass numbers (window alpha,
   menu plate, blur strength, corners). A new gate,
   `desktop/check_glass_tokens.py`, runs in CI and in the desktop installer

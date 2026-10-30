@@ -35,6 +35,8 @@ jobs:
           python3 desktop/check_contrast.py
           python3 desktop/check_glass_tokens.py
       - name: VM harness regression checks
+        env:
+          NORVI_TEST_PACKAGE_INSTALL: '1'
         run: python3 -m unittest discover -s tests/vm -p 'test_*.py'
       - name: GTK stylesheets parse
         run: |
