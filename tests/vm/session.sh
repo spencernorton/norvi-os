@@ -12,6 +12,7 @@ chmod 0700 "$XDG_RUNTIME_DIR"
 ext="$XDG_DATA_HOME/gnome-shell/extensions"
 mkdir -p "$ext/acceptance@norvi.test"
 cp source/tests/vm/session-probe/* "$ext/acceptance@norvi.test/"
+gjs -m source/tests/vm/test_visible_surface.mjs
 timeout --foreground --kill-after=10s 240s dbus-run-session -- bash -euo pipefail <<'SESSION'
 gnome-extensions install --force blur-my-shell.zip
 gsettings set org.gnome.shell welcome-dialog-last-shown-version '999'
