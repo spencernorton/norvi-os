@@ -50,12 +50,17 @@ class CandidateInstallTest(unittest.TestCase):
     def purge(self):
         self.command('dpkg', '--purge', 'norvi-os')
 
-    def make_deb(self, version, payload, destination):
+    def make_deb(self, version, payload, destination, *, depends='', recommends=''):
         package = self.work / ('package-' + version)
         (package / 'DEBIAN').mkdir(parents=True, exist_ok=True)
         (package / 'DEBIAN/control').write_text(f'Package: norvi-os\nVersion: {version}\nArchitecture: all\n'
                                                'Maintainer: Example <example@example.invalid>\n'
                                                'Description: Synthetic candidate selection control\n')
+        with (package / 'DEBIAN/control').open('a') as control:
+            if depends:
+                control.write(f'Depends: {depends}\n')
+            if recommends:
+                control.write(f'Recommends: {recommends}\n')
         relative = 'usr/share/norvi-candidate-selection/data'
         target = package / relative
         target.parent.mkdir(parents=True, exist_ok=True)
@@ -65,8 +70,8 @@ class CandidateInstallTest(unittest.TestCase):
         self.command('dpkg-deb', '--build', str(package), str(destination))
         return destination
 
-    def install(self, version):
-        candidate = self.make_deb(version, 'producer', self.work / 'candidate.deb')
+    def install(self, version, **relationships):
+        candidate = self.make_deb(version, 'producer', self.work / 'candidate.deb', **relationships)
         return self.command('bash', str(Path(__file__).with_name('install-candidate.sh')),
                             str(candidate), check=False)
 
@@ -85,6 +90,45 @@ class CandidateInstallTest(unittest.TestCase):
         result = self.install('1.4.1')
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
         self.assertEqual(Path('/usr/share/norvi-candidate-selection/data').read_text(), 'producer')
+
+    def test_reinstall_after_purge_does_not_need_repository_payload(self):
+        self.command('dpkg', '--purge', 'norvi-os')
+        (self.repo / 'archive.deb').unlink()
+        result = self.install('1.4.1')
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertEqual(Path('/usr/share/norvi-candidate-selection/data').read_text(), 'producer')
+
+    def test_producer_relationships_are_resolved(self):
+        names = ('norvi-required-fixture', 'norvi-recommended-fixture')
+        self.addCleanup(self.command, 'dpkg', '--purge', 'norvi-os', *names)
+        for name in names:
+            package = self.work / name
+            (package / 'DEBIAN').mkdir(parents=True)
+            (package / 'DEBIAN/control').write_text(
+                f'Package: {name}\nVersion: 1\nArchitecture: all\n'
+                'Maintainer: Example <example@example.invalid>\nDescription: Synthetic relationship\n')
+            archive = self.repo / f'{name}.deb'
+            self.command('dpkg-deb', '--build', str(package), str(archive))
+            fields = self.command('dpkg-deb', '-f', str(archive)).stdout
+            data = archive.read_bytes()
+            with (self.repo / 'Packages').open('a') as index:
+                index.write(fields + f'Filename: {name}.deb\nSize: {len(data)}\n'
+                            f'SHA256: {hashlib.sha256(data).hexdigest()}\n\n')
+        # A file: repository updated within one clock second can reuse its
+        # previous index. Start a fresh private index after adding the fixtures.
+        for cached in (self.work / 'lists').iterdir():
+            if cached.is_file():
+                cached.unlink()
+        self.command('apt-get', 'update')
+        for required in (True, False):
+            with self.subTest(required_relationship=required):
+                self.command('dpkg', '--purge', 'norvi-os', *names)
+                result = self.install('1.4.1', depends=names[0] if required else '', recommends=names[1])
+                self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+                self.assertEqual(Path('/usr/share/norvi-candidate-selection/data').read_text(), 'producer')
+                for name in names if required else names[1:]:
+                    self.assertEqual(self.command('dpkg-query', '-W', '-f=${db:Status-Status}', name).stdout,
+                                     'installed')
 
     def test_older_version_is_rejected_without_changing_installed_bytes(self):
         result = self.install('1.4.0')

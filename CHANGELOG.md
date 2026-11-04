@@ -4,6 +4,8 @@ All notable changes to NorviOS are documented here.
 
 ## Unreleased
 
+- Resolve the candidate package's own dependencies and desktop recommendations, then install its exact bytes after a purge.
+
 - Wait for packaged application windows to receive a nonempty compositor surface during clean VM acceptance, within the existing startup deadline.
 
 - Cancel superseded pull-request CI runs and bound the final status check.
