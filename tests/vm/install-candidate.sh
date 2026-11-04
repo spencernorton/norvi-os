@@ -11,9 +11,21 @@ if [ "$(dpkg-query -W -f='${db:Status-Status}' norvi-os 2>/dev/null || true)" = 
         exit 1
     }
 fi
-# APT treats same-version local bytes as a downgrade when the archive also
-# offers that version. The explicit version guard above forbids real downgrade.
-apt-get install -y --reinstall --allow-downgrades "$candidate"
+# Resolve the producer's relationships, not the archive's same-version
+# metadata. The desktop acceptance requires its recommended components too.
+# APT can otherwise choose an archive payload after a purge or while repairing
+# dependencies. Only dpkg receives the explicit producer file for installation.
+relationships=()
+for field in Pre-Depends Depends Recommends; do
+    relation=$(dpkg-deb -f "$candidate" "$field")
+    if [ -n "$relation" ]; then
+        relationships+=("$relation")
+    fi
+done
+if [ "${#relationships[@]}" -gt 0 ]; then
+    apt-get satisfy -y --no-remove "${relationships[@]}"
+fi
+dpkg --install "$candidate"
 test "$(dpkg-query -W -f='${Version}' norvi-os)" = "$version"
 control=$(mktemp -d)
 trap 'rm -rf "$control"' EXIT
