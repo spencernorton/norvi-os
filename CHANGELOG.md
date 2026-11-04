@@ -4,6 +4,8 @@ All notable changes to NorviOS are documented here.
 
 ## Unreleased
 
+- Cancel superseded pull-request CI runs and bound the final status check.
+
 - Fail VM acceptance on unexpected compositor exit, including shutdown crashes.
 - Qualify new producer bytes when their version is already in candidate, while
   rejecting older versions and checking the installed file manifest.
