@@ -4,6 +4,7 @@ import GioUnix from 'gi://GioUnix';
 import Shell from 'gi://Shell';
 import {Extension} from 'resource:///org/gnome/shell/extensions/extension.js';
 import * as Main from 'resource:///org/gnome/shell/ui/main.js';
+import {hasVisibleSurface, waitForVisibleSurface} from './visible-surface.js';
 
 const wait = ms => new Promise(resolve => GLib.timeout_add(GLib.PRIORITY_DEFAULT, ms, () => {
     resolve();
@@ -93,21 +94,16 @@ export default class Acceptance extends Extension {
             }
             const app = Shell.AppSystem.get_default().lookup_app(id);
             check(app, `Installed application is not registered: ${id}`);
-            const until = GLib.get_monotonic_time() + 30000000;
-            while (!app?.get_windows().some(window => window.get_compositor_private()?.mapped)) {
-                const windows = global.get_window_actors().map(actor => ({
+            const until = await waitForVisibleSurface(app, id, {
+                now: () => GLib.get_monotonic_time(),
+                wait,
+                describe: () => global.get_window_actors().map(actor => ({
                     title: actor.meta_window.get_title(),
                     app: Shell.WindowTracker.get_default().get_window_app(actor.meta_window)?.get_id(),
-                }));
-                check(GLib.get_monotonic_time() < until,
-                    `No mapped packaged application window: ${id}; observed ${JSON.stringify(windows)}`);
-                await wait(250);
-            }
+                })),
+            });
             await wait(250);
-            check(app.get_windows().some(window => {
-                const actor = window.get_compositor_private();
-                return actor?.mapped && actor.width > 0 && actor.height > 0;
-            }), `Packaged application has no visible surface: ${id}`);
+            check(hasVisibleSurface(app), `Packaged application has no visible surface: ${id}`);
             if (marker) {
                 const notes = Gio.File.new_for_path(`${GLib.get_user_config_dir()}/xnote`);
                 const persisted = () => {

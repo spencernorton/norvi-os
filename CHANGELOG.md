@@ -4,6 +4,8 @@ All notable changes to NorviOS are documented here.
 
 ## Unreleased
 
+- Wait for packaged application windows to receive a nonempty compositor surface during clean VM acceptance, within the existing startup deadline.
+
 - Cancel superseded pull-request CI runs and bound the final status check.
 
 - Fail VM acceptance on unexpected compositor exit, including shutdown crashes.
