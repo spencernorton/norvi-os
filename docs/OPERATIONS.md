@@ -32,6 +32,10 @@ echo 'fff4deaf74d384171241e2242c4034b4c2acbc9c516264d29ddbd34f7737da0e  blur-my-
 gnome-extensions install --force blur-my-shell.zip         # Blur my Shell v76, the upstream release
 ```
 
+The stable archive includes the metapackage and most of its components.
+For XDock, Wallpaper Suite and Timecrate, follow the [full desktop
+install instructions](../README.md#install) to use the signed candidate channel.
+
 `norvi-os` pins no versions: each component updates on its own through apt
 and unattended-upgrades, and any one of them can be removed without removing
 the metapackage. Blur my Shell is a per-user install from its upstream
