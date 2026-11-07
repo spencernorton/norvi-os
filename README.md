@@ -256,9 +256,10 @@ shellcheck -S warning install.sh uninstall.sh desktop/*.sh scripts/build.sh
 scripts/build.sh                               # the norvi-os .deb into dist/; needs debhelper and dpkg-dev
 ```
 
-The installers change boot and login configuration, so they are run on a
-clean Ubuntu 26.04 virtual machine before a release rather than in CI. The
-screenshots above come from that machine.
+[CI](https://github.com/spencernorton/norvi-os/actions/workflows/ci.yml) also
+installs the Debian package in a clean Ubuntu 26.04 virtual machine and
+checks the desktop, both installers and rollback. The workflow uploads
+the VM evidence with each run.
 
 ## Licence
 
