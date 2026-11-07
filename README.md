@@ -8,8 +8,8 @@
 <p align="center">
   <a href="https://norvitech.com"><img alt="NorviTech Suite" src="https://img.shields.io/badge/NorviTech-Suite-FD8024.svg"></a>
   <a href="https://github.com/spencernorton/norvi-os/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/spencernorton/norvi-os/actions/workflows/ci.yml/badge.svg"></a>
-  <a href="https://github.com/spencernorton/norvi-os/tags"><img alt="Latest release" src="https://img.shields.io/github/v/tag/spencernorton/norvi-os?label=release&sort=semver"></a>
-  <a href="#install"><img alt="Install with APT" src="https://img.shields.io/badge/install-APT-2D2D2D.svg"></a>
+  <a href="https://github.com/spencernorton/norvi-os/releases/latest"><img alt="Latest release" src="https://img.shields.io/github/v/release/spencernorton/norvi-os?label=release"></a>
+  <a href="https://norvitech.com/#install"><img alt="APT repository" src="https://img.shields.io/badge/apt-Ubuntu%2026.04-e95420.svg?logo=ubuntu&logoColor=white"></a>
   <a href="LICENSE"><img alt="Licence" src="https://img.shields.io/badge/licence-GPL--3.0--or--later-blue.svg"></a>
   <a href="https://buy.stripe.com/8x26oH2U44f65TRe574wM04"><img alt="Donate" src="https://img.shields.io/badge/donate-Stripe-635bff.svg?logo=stripe&logoColor=white"></a>
 </p>
@@ -111,7 +111,7 @@ repository:
 
 | App | What it is |
 |---|---|
-| [Helios](https://github.com/spencernorton/helios) | A native desktop for coding agents: Claude Code, OpenAI Codex and OpenRouter |
+| [Helios](https://github.com/spencernorton/helios) | A desktop workspace for coding agents |
 | [XNote](https://github.com/spencernorton/xnote) | Sticky notes that stay on your desktop |
 | [XNote Placement](https://github.com/spencernorton/xnote-placement) | A GNOME Shell extension that puts each XNote note back where you left it |
 | [SnipSnap](https://github.com/spencernorton/snipsnap) | Screenshot any region of any monitor on GNOME Wayland |
@@ -129,8 +129,15 @@ repository:
    curl -fsSL https://apt.norvitech.com/setup.sh | sudo sh
    ```
 
-2. NorviOS currently lives in the signed candidate channel. Add that channel
-   alongside the stable source installed by the keyring, then install it:
+2. Install the metapackage from the stable archive:
+
+   ```bash
+   sudo apt install norvi-os
+   ```
+
+   The stable archive includes the metapackage and most of its components.
+   XDock, Wallpaper Suite and Timecrate are currently in the signed candidate
+   channel. For the full desktop, add that channel alongside stable first:
 
    ```bash
    sudo sed 's/^Suites: resolute$/Suites: resolute-candidate/' \
@@ -145,9 +152,6 @@ repository:
    Placement, SnipSnap and Timecrate — and suggests Helios. It pins no
    versions, so each component updates on its own, and you can remove any one
    of them without removing the rest.
-
-   Candidate packages can change before promotion to stable. Their archive
-   signatures use the same keyring; this does not disable APT verification.
 
 3. Install [Blur my Shell](https://github.com/aunetx/blur-my-shell) v76 from
    its upstream release, checked against the release's SHA-256.
@@ -252,9 +256,10 @@ shellcheck -S warning install.sh uninstall.sh desktop/*.sh scripts/build.sh
 scripts/build.sh                               # the norvi-os .deb into dist/; needs debhelper and dpkg-dev
 ```
 
-The installers change boot and login configuration, so they are run on a
-clean Ubuntu 26.04 virtual machine before a release rather than in CI. The
-screenshots above come from that machine.
+[CI](https://github.com/spencernorton/norvi-os/actions/workflows/ci.yml) also
+installs the Debian package in a clean Ubuntu 26.04 virtual machine and
+checks the desktop, both installers and rollback. The workflow uploads
+the VM evidence with each run.
 
 ## Licence
 
@@ -274,6 +279,8 @@ terms, which do not allow modifying it or using it to brand another product.
   <a href="https://github.com/spencernorton/helios">Helios</a> ·
   <a href="https://github.com/spencernorton/DH-Waypoint">DH-Waypoint</a> ·
   <a href="https://github.com/spencernorton/armiger">Armiger</a> ·
+  <a href="https://github.com/spencernorton/arrmes">Arrmes</a> ·
+  <a href="https://github.com/spencernorton/endexis">Endexis</a> ·
   <a href="https://github.com/spencernorton/xnote">XNote</a> ·
   <a href="https://github.com/spencernorton/xnote-placement">XNote Placement</a> ·
   <a href="https://github.com/spencernorton/snipsnap">SnipSnap</a> ·
