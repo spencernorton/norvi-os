@@ -44,7 +44,8 @@ bms_blacklist_add() {
 
 bms_blacklist_remove() {
   [ -d "$BMS/schemas" ] || return 0
-  local cur out first item
+  local - cur out first item
+  set -f   # entries can be wildcards ('crx_*'): the split below must not glob them against $PWD
   cur=$(GSETTINGS_SCHEMA_DIR="$BMS/schemas" gsettings get "$APPS" blacklist)
   case "$cur" in "@as []"|"[]") return ;; esac
   out=""; first=1
@@ -104,6 +105,34 @@ check "removing something that is not there changes nothing" "['MyOwnApp']"
 STATE="['gjs', 'google-chrome', 'brave-browser', 'MyOwnApp']"
 bms_blacklist_remove gjs; bms_blacklist_remove google-chrome; bms_blacklist_remove brave-browser
 check "a full uninstall leaves the hand-added entry alone" "['MyOwnApp']"
+
+# --- wildcard entries: the browsers' app windows and Steam. They are stored as
+# literal patterns for Blur my Shell to match; the shell must never expand them.
+
+STATE="['Plank']"; bms_blacklist_add 'crx_*'; bms_blacklist_add 'crx_*'
+check "a wildcard entry is added literally, once" "['Plank', 'crx_*']"
+
+STATE="['Plank']"
+for e in gjs google-chrome brave-browser 'crx_*' 'brave-*' 'chrome-*' steam 'steam_app_*'; do
+  bms_blacklist_add "$e"
+done
+check "every installer entry accumulates in order" \
+  "['Plank', 'gjs', 'google-chrome', 'brave-browser', 'crx_*', 'brave-*', 'chrome-*', 'steam', 'steam_app_*']"
+
+# The regression set -f exists for: removal splits the list with an unquoted
+# expansion, and a file in the working directory whose name fits a wildcard
+# entry got substituted for it -- the list came back with the FILE NAME in it.
+GLOBDIR=$(mktemp -d); touch "$GLOBDIR/'crx_x'"
+STATE="['crx_*', 'MyOwnApp', 'gjs']"
+( cd "$GLOBDIR" && bms_blacklist_remove gjs && printf '%s\n' "$STATE" > "$GLOBDIR/out" )
+STATE=$(cat "$GLOBDIR/out"); rm -rf "$GLOBDIR"
+check "removal never globs a wildcard entry against the working directory" "['crx_*', 'MyOwnApp']"
+
+STATE="['MyOwnApp', 'gjs', 'google-chrome', 'brave-browser', 'crx_*', 'brave-*', 'chrome-*', 'steam', 'steam_app_*']"
+for e in gjs google-chrome brave-browser 'crx_*' 'brave-*' 'chrome-*' steam 'steam_app_*'; do
+  bms_blacklist_remove "$e"
+done
+check "a full uninstall with wildcard entries leaves the hand-added entry alone" "['MyOwnApp']"
 
 # The finding this pair exists for: an entry the user ALREADY had must never be
 # recorded as ours, or uninstall takes away something we never added.
