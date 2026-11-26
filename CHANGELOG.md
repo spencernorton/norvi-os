@@ -4,6 +4,10 @@ All notable changes to NorviOS are documented here.
 
 ## Unreleased
 
+- Stop Blur my Shell blurring behind browser web-app windows and Steam. The installer already excluded Chrome and Brave, but an installed web app or an `--app` window has a window class of its own, so those windows, Steam and its games all kept a dynamic blur, redrawn on every change around the window, behind content that is fully opaque. The new entries are `crx_*`, `brave-*`, `chrome-*`, `steam` and `steam_app_*`.
+
+- Make `--uninstall` safe for wildcard blacklist entries. Removing an entry split the list without disabling pathname expansion, so a file in the working directory that matched a wildcard entry replaced it in the list.
+
 - Document stable APT installation and the candidate channel for the full desktop.
 
 - Resolve the candidate package's own dependencies and desktop recommendations, then install its exact bytes after a purge.

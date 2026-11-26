@@ -86,7 +86,8 @@ bms_blacklist_add() {
 # The inverse, and the same rule: string surgery on a list the user co-owns.
 bms_blacklist_remove() {
   [ -d "$BMS/schemas" ] || return 0
-  local cur out first item
+  local - cur out first item
+  set -f   # entries can be wildcards ('crx_*'): the split below must not glob them against $PWD
   cur=$(GSETTINGS_SCHEMA_DIR="$BMS/schemas" gsettings get "$APPS" blacklist)
   case "$cur" in "@as []"|"[]") return ;; esac
   out=""; first=1
@@ -271,6 +272,25 @@ bms_blacklist_add gjs
 # the probe. The blacklist below stays: it is a separate, GPU-cost-only argument.
 bms_blacklist_add google-chrome
 bms_blacklist_add brave-browser
+
+# Their app windows, and Steam. An installed web app or an --app window has a
+# window class of its own -- crx_<id> for installed apps under Wayland,
+# brave-<site>-<profile> or chrome-<site>-<profile> for --app windows -- so the
+# two entries above never matched them, though Chromium paints them just as
+# opaque. Steam's client is Chromium too (CEF), and its games draw every pixel of
+# their windows. These are dynamic blurs, not a one-off cost: one is redrawn
+# whenever anything under or over its window changes, and Blur my Shell's
+# native background blur builds fresh framebuffers on every redraw. Measured on
+# a three-4K, 120 Hz desktop, application blur was about half the compositor's
+# main-thread load; the share spent under opaque windows bought no pixels.
+# Patterns are anchored, case-insensitive wildcards: `brave-*` also covers
+# brave-browser, and `chrome-*` cannot match google-chrome. Other Chromium-based
+# browsers are left alone -- add them by hand if they stay opaque.
+bms_blacklist_add 'crx_*'
+bms_blacklist_add 'brave-*'
+bms_blacklist_add 'chrome-*'
+bms_blacklist_add steam
+bms_blacklist_add 'steam_app_*'
 fi
 
 # GTK4 re-reads the user stylesheet live; GTK3 does NOT. Measured: dropping the

@@ -115,9 +115,14 @@ signal that never grows an opaque bar across the top.
 
 **Scope is GTK3 and GTK4 apps.** Electron, Chrome, Steam, Qt and Java apps draw
 opaque backgrounds by construction and do not use GTK for their windows.
-Blur my Shell still attaches a blur under them, which costs a little GPU and
-shows nothing, so the installer adds the two Chromium browsers to Blur my
-Shell's blacklist. It also blacklists `gjs`, the window class of the Desktop
+Blur my Shell still attaches a blur under them, and it shows nothing. It is
+not free, either: the blur is dynamic, so it is redrawn whenever anything
+under or over the window changes, and each redraw builds new framebuffers. On
+a three-4K, 120 Hz desktop, application blur was about half of the
+compositor's main-thread load. So the installer adds the two Chromium browsers
+to Blur my Shell's blacklist, along with their installed and `--app` web-app
+windows (`crx_*`, `brave-*`, `chrome-*`) and Steam and its games (`steam`,
+`steam_app_*`). It also blacklists `gjs`, the window class of the Desktop
 Icons extension's desktop: with `enable-all` on, blurring that window blurs
 the wallpaper itself. The cost is that other `gjs` windows, such as extension
 preference dialogs, lose their blur. Blur my Shell matches on window class
