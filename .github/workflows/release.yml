@@ -43,6 +43,11 @@ jobs:
         with:
           name: norvi-os-debian-candidate
           path: release-assets
+      - name: Verify the candidate and assemble complete upstream source
+        run: |
+          (cd release-assets && sha256sum --check SHA256SUMS.txt)
+          python3 -I desktop/window-glass/source-inputs.py fetch
+          python3 -I desktop/window-glass/source-inputs.py pack release-assets/upstream-source.tar.gz
       - name: Package the exact public source and checksum everything
         run: |
           rm release-assets/SHA256SUMS.txt

@@ -1,0 +1,441 @@
+diff --git a/clutter/clutter/clutter-actor.c b/clutter/clutter/clutter-actor.c
+index 82d89da..760acec 100644
+--- a/clutter/clutter/clutter-actor.c
++++ b/clutter/clutter/clutter-actor.c
+@@ -910,6 +910,7 @@ enum
+   CHILD_REMOVED,
+   CLONED,
+   DECLONED,
++  NORVI_EFFECTS_CHANGED,
+ 
+   LAST_SIGNAL
+ };
+@@ -7532,6 +7533,13 @@ clutter_actor_class_init (ClutterActorClass *klass)
+                   G_TYPE_NONE, 1,
+                   CLUTTER_TYPE_ACTOR);
+ 
++  /* The public effect list can change without property notification:
++   * ClutterActor:effect is write-only, and clear_effects has no setter. */
++  actor_signals[NORVI_EFFECTS_CHANGED] =
++    g_signal_new (I_("norvi-effects-changed"),
++                  G_TYPE_FROM_CLASS (object_class),
++                  G_SIGNAL_RUN_LAST, 0, NULL, NULL, NULL, G_TYPE_NONE, 0);
++
+   /*< private > */
+   actor_signals[CLONED] =
+     g_signal_new ("cloned",
+@@ -14262,6 +14270,7 @@ clutter_actor_add_effect (ClutterActor  *self,
+   clutter_actor_queue_redraw (self);
+ 
+   g_object_notify_by_pspec (G_OBJECT (self), obj_props[PROP_EFFECT]);
++  g_signal_emit (self, actor_signals[NORVI_EFFECTS_CHANGED], 0);
+ }
+ 
+ /**
+@@ -14314,6 +14323,7 @@ clutter_actor_remove_effect (ClutterActor  *self,
+   clutter_actor_queue_redraw (self);
+ 
+   g_object_notify_by_pspec (G_OBJECT (self), obj_props[PROP_EFFECT]);
++  g_signal_emit (self, actor_signals[NORVI_EFFECTS_CHANGED], 0);
+ }
+ 
+ /**
+@@ -14415,6 +14425,7 @@ clutter_actor_clear_effects (ClutterActor *self)
+   _clutter_meta_group_clear_metas_no_internal (self->priv->effects);
+ 
+   clutter_actor_queue_redraw (self);
++  g_signal_emit (self, actor_signals[NORVI_EFFECTS_CHANGED], 0);
+ }
+ 
+ /**
+diff --git a/src/compositor/meta-shaped-texture-private.h b/src/compositor/meta-shaped-texture-private.h
+index 4e07750..2477634 100644
+--- a/src/compositor/meta-shaped-texture-private.h
++++ b/src/compositor/meta-shaped-texture-private.h
+@@ -58,6 +58,10 @@ void meta_shaped_texture_reset_viewport_dst_size (MetaShapedTexture *stex);
+ void meta_shaped_texture_set_buffer_scale (MetaShapedTexture *stex,
+                                            int                buffer_scale);
+ 
++gboolean meta_shaped_texture_get_damage_clip (MetaShapedTexture  *stex,
++                                             const MtkRectangle *area,
++                                             MtkRectangle       *clip);
++
+ gboolean meta_shaped_texture_update_area (MetaShapedTexture  *stex,
+                                           const MtkRectangle *area,
+                                           MtkRectangle       *clip);
+diff --git a/src/compositor/meta-shaped-texture.c b/src/compositor/meta-shaped-texture.c
+index a80818e..af3891f 100644
+--- a/src/compositor/meta-shaped-texture.c
++++ b/src/compositor/meta-shaped-texture.c
+@@ -1195,24 +1195,12 @@ meta_shaped_texture_set_mask_texture (MetaShapedTexture *stex,
+   clutter_content_invalidate (CLUTTER_CONTENT (stex));
+ }
+ 
+-/**
+- * meta_shaped_texture_update_area:
+- * @stex: #MetaShapedTexture
+- * @x: the x coordinate of the damaged area
+- * @y: the y coordinate of the damaged area
+- * @width: the width of the damaged area
+- * @height: the height of the damaged area
+- * @clip: (out): the resulting clip region
+- *
+- * Repairs the damaged area indicated by @x, @y, @width and @height
+- * and potentially queues a redraw.
+- *
+- * Return value: Whether a redraw have been queued or not
+- */
++/* Map a buffer damage rectangle to actor-local coordinates using the
++ * texture's filter footprint, scale, transform and viewport. No culling. */
+ gboolean
+-meta_shaped_texture_update_area (MetaShapedTexture  *stex,
+-                                 const MtkRectangle *area,
+-                                 MtkRectangle       *clip)
++meta_shaped_texture_get_damage_clip (MetaShapedTexture  *stex,
++                                     const MtkRectangle *area,
++                                     MtkRectangle       *clip)
+ {
+   MtkMonitorTransform inverted_transform;
+   MtkRectangle buffer_rect;
+@@ -1311,8 +1299,18 @@ meta_shaped_texture_update_area (MetaShapedTexture  *stex,
+                                     clip);
+     }
+ 
+-  meta_texture_mipmap_invalidate (stex->texture_mipmap);
++  return TRUE;
++}
+ 
++gboolean
++meta_shaped_texture_update_area (MetaShapedTexture  *stex,
++                                 const MtkRectangle *area,
++                                 MtkRectangle       *clip)
++{
++  if (!meta_shaped_texture_get_damage_clip (stex, area, clip))
++    return FALSE;
++
++  meta_texture_mipmap_invalidate (stex->texture_mipmap);
+   return TRUE;
+ }
+ 
+diff --git a/src/compositor/meta-window-actor-private.h b/src/compositor/meta-window-actor-private.h
+index a2e39ae..975a425 100644
+--- a/src/compositor/meta-window-actor-private.h
++++ b/src/compositor/meta-window-actor-private.h
+@@ -102,7 +102,10 @@ int meta_window_actor_get_geometry_scale (MetaWindowActor *window_actor);
+ 
+ gboolean meta_window_actor_is_streaming (MetaWindowActor *window_actor);
+ 
+-void meta_window_actor_notify_damaged (MetaWindowActor *window_actor);
++gboolean meta_window_actor_tracks_damage_bounds (MetaWindowActor *window_actor);
++void meta_window_actor_notify_surface_update (MetaWindowActor    *window_actor,
++                                            gboolean            had_damage,
++                                            const MtkRectangle *bounds);
+ 
+ gboolean meta_window_actor_is_frozen (MetaWindowActor *self);
+ 
+diff --git a/src/compositor/meta-window-actor.c b/src/compositor/meta-window-actor.c
+index f09659b..950d87a 100644
+--- a/src/compositor/meta-window-actor.c
++++ b/src/compositor/meta-window-actor.c
+@@ -90,6 +90,7 @@ enum
+   FIRST_FRAME,
+   EFFECTS_COMPLETED,
+   DAMAGED,
++  DAMAGED_WITH_BOUNDS,
+   THAWED,
+ 
+   LAST_SIGNAL
+@@ -262,6 +263,22 @@ meta_window_actor_class_init (MetaWindowActorClass *klass)
+                   NULL, NULL, NULL,
+                   G_TYPE_NONE, 0);
+ 
++  /**
++   * MetaWindowActor::damaged-with-bounds:
++   * @actor: the window actor
++   * @bounds: (nullable): conservative affected rectangle in logical stage
++   *   coordinates, or %NULL when the entire window must be considered
++   *
++   * An optional alternative to ::damaged for backdrop consumers. A commit
++   * that changes the surface mapping can invalidate the complete backdrop.
++   * The rectangle is borrowed for the duration of signal emission.
++   */
++  signals[DAMAGED_WITH_BOUNDS] =
++    g_signal_new ("damaged-with-bounds",
++                  G_TYPE_FROM_CLASS (object_class),
++                  G_SIGNAL_RUN_LAST, 0, NULL, NULL, NULL,
++                  G_TYPE_NONE, 1, MTK_TYPE_RECTANGLE);
++
+   /**
+    * MetaWindowActor::thawed:
+    * @actor: the #MetaWindowActor instance
+@@ -1620,10 +1637,21 @@ meta_window_actor_from_actor (ClutterActor *actor)
+   return NULL;
+ }
+ 
++gboolean
++meta_window_actor_tracks_damage_bounds (MetaWindowActor *window_actor)
++{
++  return g_signal_has_handler_pending (window_actor,
++                                       signals[DAMAGED_WITH_BOUNDS], 0, FALSE);
++}
++
+ void
+-meta_window_actor_notify_damaged (MetaWindowActor *window_actor)
++meta_window_actor_notify_surface_update (MetaWindowActor    *window_actor,
++                                       gboolean            had_damage,
++                                       const MtkRectangle *bounds)
+ {
+-  g_signal_emit (window_actor, signals[DAMAGED], 0);
++  g_signal_emit (window_actor, signals[DAMAGED_WITH_BOUNDS], 0, bounds);
++  if (had_damage)
++    g_signal_emit (window_actor, signals[DAMAGED], 0);
+ }
+ 
+ static CoglFramebuffer *
+diff --git a/src/wayland/meta-wayland-surface.c b/src/wayland/meta-wayland-surface.c
+index b52375a..41dc1af 100644
+--- a/src/wayland/meta-wayland-surface.c
++++ b/src/wayland/meta-wayland-surface.c
+@@ -23,12 +23,14 @@
+ #include "wayland/meta-wayland-surface-private.h"
+ 
+ #include <gobject/gvaluecollector.h>
++#include <math.h>
+ #include <wayland-server.h>
+ 
+ #include "backends/meta-cursor-tracker-private.h"
+ #include "clutter/clutter.h"
+ #include "cogl/cogl.h"
+ #include "fifo-v1-server-protocol.h"
++#include "compositor/meta-shaped-texture-private.h"
+ #include "compositor/meta-surface-actor-wayland.h"
+ #include "compositor/meta-surface-actor.h"
+ #include "compositor/meta-window-actor-private.h"
+@@ -879,16 +881,149 @@ meta_wayland_surface_apply_viewport (MetaWaylandSurface      *surface,
+ #endif
+ }
+ 
++/* State is applied as a transaction. Using a protocol request or the final
++ * stage redraw clip here would lose that commit's coordinate frame. */
++static gboolean
++damage_mapping_changed (MetaWaylandSurfaceState *state)
++{
++  return state->dx || state->dy || state->derived.surface_size_changed ||
++         state->scale > 0 || state->has_new_buffer_transform ||
++         state->has_new_viewport_src_rect || state->has_new_viewport_dst_size ||
++         state->has_new_geometry || state->subsurface_placement_ops ||
++         state->opaque_region_set || state->has_new_color_state ||
++         state->has_new_premult || state->has_new_coeffs ||
++         state->has_new_chroma_loc;
++}
++
++/* A buffer swap normally keeps its visual representation. A swap between
++ * different representations can change the full image regardless of damage. */
++static gboolean
++buffer_mapping_changed (MetaWaylandSurface      *surface,
++                        MetaWaylandSurfaceState *state)
++{
++  if (!state->newly_attached)
++    return FALSE;
++
++  if (!surface->buffer || !state->buffer ||
++      !surface->applied_state.texture || !state->texture)
++    return TRUE;
++
++  return surface->buffer->type != state->buffer->type ||
++         meta_wayland_buffer_is_y_inverted (surface->buffer) !=
++         meta_wayland_buffer_is_y_inverted (state->buffer) ||
++         meta_multi_texture_get_width (surface->applied_state.texture) !=
++         meta_multi_texture_get_width (state->texture) ||
++         meta_multi_texture_get_height (surface->applied_state.texture) !=
++         meta_multi_texture_get_height (state->texture) ||
++         meta_multi_texture_get_format (surface->applied_state.texture) !=
++         meta_multi_texture_get_format (state->texture) ||
++         cogl_texture_get_format (meta_multi_texture_get_plane (surface->applied_state.texture, 0)) !=
++         cogl_texture_get_format (meta_multi_texture_get_plane (state->texture, 0));
++}
++
++static gboolean
++get_toplevel_damage_bounds (MetaWaylandSurface      *surface,
++                            MetaWaylandSurfaceState *state,
++                            MetaWindowActor         *window_actor,
++                            MtkRectangle            *bounds)
++{
++  MetaSurfaceActor *surface_actor;
++  ClutterActor *actor, *stage, *ancestor;
++  MetaShapedTexture *texture;
++  MtkRectangle box, damage, clip, frame;
++  graphene_point3d_t v[4] = { 0 };
++  ClutterActorBox content;
++  float width, height;
++  gboolean reached_window = FALSE;
++
++  if (surface->applied_state.scale != 1 ||
++      surface->buffer_transform != MTK_MONITOR_TRANSFORM_NORMAL ||
++      surface->viewport.has_src_rect || surface->viewport.has_dst_size ||
++      meta_wayland_surface_get_toplevel (surface) != surface ||
++      meta_wayland_surface_is_xwayland (surface) ||
++      meta_window_actor_effect_in_progress (window_actor) ||
++      mtk_region_is_empty (state->buffer_damage))
++    return FALSE;
++
++  surface_actor = meta_wayland_surface_get_actor (surface);
++  if (!surface_actor || meta_surface_actor_is_frozen (surface_actor))
++    return FALSE;
++
++  actor = CLUTTER_ACTOR (surface_actor);
++  stage = clutter_actor_get_stage (actor);
++  if (!stage || !clutter_actor_is_mapped (actor))
++    return FALSE;
++
++  /* The stage is the root and has no parent allocation. All descendants
++   * must already be allocated; querying vertices must not force a layout. */
++  for (ancestor = actor; ancestor && ancestor != stage;
++       ancestor = clutter_actor_get_parent (ancestor))
++    {
++      if (ancestor == CLUTTER_ACTOR (window_actor))
++        reached_window = TRUE;
++      /* The consumer can inspect the window actor and its parents. Only
++       * Mutter can see the originating surface inside it. An effect there
++       * may expand damage beyond the projected buffer rectangle. */
++      if (!clutter_actor_has_allocation (ancestor) ||
++          clutter_actor_has_mapped_clones (ancestor) ||
++          (!reached_window && clutter_actor_has_effects (ancestor)))
++        return FALSE;
++    }
++  if (!reached_window || ancestor != stage)
++    return FALSE;
++
++  /* A stable one-to-one root surface is the initial supported case. For a
++   * transformed actor, a sub-surface, a clone or any uncertain mapping the
++   * consumer receives NULL and refreshes its usual set of dependents. */
++  meta_window_get_buffer_rect (meta_window_actor_get_meta_window (window_actor), &box);
++  texture = meta_surface_actor_get_texture (surface_actor);
++  clutter_actor_get_size (actor, &width, &height);
++  clutter_actor_get_content_box (actor, &content);
++  if (width != box.width || height != box.height ||
++      content.x1 != 0 || content.y1 != 0 ||
++      content.x2 != width || content.y2 != height ||
++      meta_shaped_texture_get_width (texture) != width ||
++      meta_shaped_texture_get_height (texture) != height)
++    return FALSE;
++
++  clutter_actor_get_abs_allocation_vertices (actor, v);
++  for (unsigned int i = 0; i < G_N_ELEMENTS (v); i++)
++    {
++      float x = box.x + (i % 2 ? width : 0);
++      float y = box.y + (i / 2 ? height : 0);
++      /* Require a unit translation. Negated comparisons reject NaNs. The
++       * one-pixel guard below covers projection rounding at the edges. */
++      if (!(fabsf (v[i].x - x) < 0.01f &&
++            fabsf (v[i].y - y) < 0.01f &&
++            fabsf (v[i].z - v[0].z) < 0.01f))
++        return FALSE;
++    }
++
++  damage = mtk_region_get_extents (state->buffer_damage);
++  if (!meta_shaped_texture_get_damage_clip (texture, &damage, &clip) ||
++      clip.width <= 0 || clip.height <= 0)
++    return FALSE;
++
++  *bounds = (MtkRectangle) { box.x + clip.x - 1, box.y + clip.y - 1,
++                             clip.width + 2, clip.height + 2 };
++  /* The extension indexes ordinary sources by their frame. Client-side
++   * shadow buffers can extend beyond it and use the unbounded event. */
++  meta_window_get_frame_rect (meta_window_actor_get_meta_window (window_actor), &frame);
++  return mtk_rectangle_contains_rect (&frame, bounds);
++}
++
+ void
+ meta_wayland_surface_apply_state (MetaWaylandSurface      *surface,
+                                   MetaWaylandSurfaceState *state)
+ {
+   gboolean had_damage = FALSE;
++  gboolean mapping_changed;
+   int old_width, old_height;
+ 
+   old_width = meta_wayland_surface_get_width (surface);
+   old_height = meta_wayland_surface_get_height (surface);
+ 
++  mapping_changed = buffer_mapping_changed (surface, state);
+   g_signal_emit (surface, surface_signals[SURFACE_PRE_STATE_APPLIED], 0);
+ 
+   surface->applied_state.is_valid = surface->committed_state.is_valid;
+@@ -987,6 +1122,8 @@ meta_wayland_surface_apply_state (MetaWaylandSurface      *surface,
+     meta_wayland_surface_get_width (surface) != old_width ||
+     meta_wayland_surface_get_height (surface) != old_height;
+ 
++  mapping_changed |= damage_mapping_changed (state);
++
+   if (!mtk_region_is_empty (state->surface_damage) ||
+       !mtk_region_is_empty (state->buffer_damage))
+     {
+@@ -1082,7 +1219,7 @@ meta_wayland_surface_apply_state (MetaWaylandSurface      *surface,
+                  surface_state_signals[SURFACE_STATE_SIGNAL_APPLIED],
+                  0);
+ 
+-  if (had_damage)
++  if (had_damage || mapping_changed)
+     {
+       MetaWindow *toplevel_window;
+ 
+@@ -1094,7 +1231,18 @@ meta_wayland_surface_apply_state (MetaWaylandSurface      *surface,
+           toplevel_window_actor =
+             meta_window_actor_from_window (toplevel_window);
+           if (toplevel_window_actor)
+-            meta_window_actor_notify_damaged (toplevel_window_actor);
++            {
++              MtkRectangle bounds;
++              const MtkRectangle *known = NULL;
++
++              if (had_damage && !mapping_changed &&
++                  meta_window_actor_tracks_damage_bounds (toplevel_window_actor) &&
++                  get_toplevel_damage_bounds (surface, state,
++                                              toplevel_window_actor, &bounds))
++                known = &bounds;
++              meta_window_actor_notify_surface_update (toplevel_window_actor,
++                                                       had_damage, known);
++            }
+         }
+     }
+ 
+diff --git a/src/wayland/meta-wayland-transaction.c b/src/wayland/meta-wayland-transaction.c
+index 0419663..8e106a9 100644
+--- a/src/wayland/meta-wayland-transaction.c
++++ b/src/wayland/meta-wayland-transaction.c
+@@ -23,6 +23,8 @@
+ 
+ #include <glib-unix.h>
+ 
++#include "compositor/meta-window-actor-private.h"
++
+ #include "wayland/meta-wayland.h"
+ #include "wayland/meta-wayland-buffer.h"
+ #include "wayland/meta-wayland-dma-buf.h"
+@@ -103,11 +105,25 @@ static void
+ meta_wayland_transaction_apply_subsurface_position (MetaWaylandSurface          *surface,
+                                                     MetaWaylandTransactionEntry *entry)
+ {
+-  if (!entry->has_sub_pos)
++  MetaWindow *window;
++
++  if (!entry->has_sub_pos ||
++      (surface->sub.x == entry->x && surface->sub.y == entry->y))
+     return;
+ 
+   surface->sub.x = entry->x;
+   surface->sub.y = entry->y;
++
++  /* wl_subsurface.set_position takes effect with the parent's transaction.
++   * No buffer commit is required on the child. Repaint consumers before the
++   * next frame, including glass over the old position. */
++  window = meta_wayland_surface_get_toplevel_window (surface);
++  if (window)
++    {
++      MetaWindowActor *actor = meta_window_actor_from_window (window);
++      if (actor && meta_window_actor_tracks_damage_bounds (actor))
++        meta_window_actor_notify_surface_update (actor, FALSE, NULL);
++    }
+ }
+ 
+ static gboolean

@@ -37,7 +37,9 @@ bash desktop/test-blacklist-merge.sh
 bash desktop/test-uninstall-restore.sh
 bash desktop/test-install-desktop.sh
 shellcheck -S warning install.sh uninstall.sh desktop/*.sh scripts/build.sh   # lint; CI enforces it
-scripts/build.sh                               # the norvi-os metapackage into dist/
+sudo apt-get --no-install-recommends build-dep ./
+python3 -I desktop/window-glass/source-inputs.py fetch
+scripts/build.sh                               # the desktop packages in dist/
 ```
 
 CI runs both installers inside a fresh Ubuntu 26.04 VM and checks rollback,

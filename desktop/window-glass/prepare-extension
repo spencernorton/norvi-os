@@ -1,0 +1,148 @@
+#!/usr/bin/python3
+"""Use packaged window glass with a matching per-user Blur my Shell installation."""
+import argparse
+import fcntl
+import hashlib
+import os
+import re
+import stat
+import tempfile
+from pathlib import Path
+
+DATA = Path('/usr/share/norvi-window-glass/v76')
+SYSTEM = Path('/usr/share/gnome-shell/extensions/blur-my-shell@aunetx')
+ENTRIES = ('extension.js', 'prefs.js')
+LOADER = re.compile(r'\.norvi-glass-loader-([0-9a-f]{64})\.js')
+
+
+def regular(path):
+    try:
+        return stat.S_ISREG(path.lstat().st_mode)
+    except FileNotFoundError:
+        return False
+
+
+def digest(path):
+    return hashlib.sha256(path.read_bytes()).hexdigest()
+
+
+def original(root, name):
+    return root / ('.norvi-v76-' + name)
+
+
+def loader_for(entry):
+    if regular(entry):
+        # Each entry is an independent regular copy. File editors and ZIP
+        # extractors can rewrite it without touching the other entry point.
+        checksum = digest(entry)
+        marker = entry.parent / ('.norvi-glass-loader-' + checksum + '.js')
+        if regular(marker) and digest(marker) == checksum:
+            return marker
+        return None
+    if entry.is_symlink():
+        match = LOADER.fullmatch(os.readlink(entry))
+        if match:
+            loader = entry.parent / match[0]
+            if regular(loader) and digest(loader) == match[1]:
+                return loader
+    return None
+
+
+def restore_entries(root, manifest):
+    for name in ENTRIES:
+        entry, backup = root / name, original(root, name)
+        if loader_for(entry) and regular(backup) and digest(backup) == manifest[name]:
+            os.replace(backup, entry)
+    tidy(root, manifest)
+
+
+def tidy(root, manifest):
+    remaining = {marker for name in ENTRIES if (marker := loader_for(root / name))}
+    for loader in root.glob('.norvi-glass-loader-*.js'):
+        match = LOADER.fullmatch(loader.name)
+        if match and loader not in remaining and regular(loader) and digest(loader) == match[1]:
+            loader.unlink()
+    for name in ENTRIES:
+        entry, backup = root / name, original(root, name)
+        if regular(entry) and regular(backup) and os.path.samefile(entry, backup):
+            backup.unlink()
+
+
+def reconcile(root, data, system, restore=False):
+    manifest = {name: digest for digest, name in
+                    (line.split('  ', 1) for line in (data / 'upstream.sha256').read_text().splitlines())}
+    if restore:
+        restore_entries(root, manifest)
+        return False
+    if not all(regular(system / n) for n in ENTRIES):
+        return False
+    # The system modules load shaders and GTK templates relative to their own
+    # URIs. Redirect only matching code, templates, shaders and schema.
+    for name, expected in manifest.items():
+        path = root / name
+        if name in ENTRIES and loader_for(path):
+            path = original(root, name)
+        if not regular(path) or digest(path) != expected:
+            restore_entries(root, manifest)
+            return False
+    contents = (data / 'loader.js').read_bytes()
+    loader = root / ('.norvi-glass-loader-' + hashlib.sha256(contents).hexdigest() + '.js')
+    for name in ENTRIES:
+        backup = original(root, name)
+        if os.path.lexists(backup) and (not regular(backup) or digest(backup) != manifest[name]):
+            return False
+    if os.path.lexists(loader) and (not regular(loader) or loader.read_bytes() != contents):
+        return False
+    if all(regular(root / name) and loader_for(root / name) == loader for name in ENTRIES):
+        return True
+    # Each entry point remains usable across interruption. The original stays
+    # in its own directory so imports and resource paths keep their meaning.
+    with tempfile.TemporaryDirectory(dir=root, prefix='.norvi-stage-') as work:
+        stage = Path(work)
+        if not os.path.lexists(loader):
+            staged = stage / 'loader'
+            staged.write_bytes(contents)
+            os.link(staged, loader)
+        for name in ENTRIES:
+            entry, backup = root / name, original(root, name)
+            active = loader_for(entry)
+            if regular(entry) and active == loader:
+                continue
+            if not os.path.lexists(backup):
+                os.link(entry, backup, follow_symlinks=False)
+            dispatch = stage / name
+            dispatch.write_bytes(contents)
+            dispatch.chmod(stat.S_IMODE(backup.stat().st_mode))
+            if active:
+                if loader_for(entry) != active:
+                    return False
+            elif not regular(entry) or digest(entry) != manifest[name]:
+                return False
+            os.replace(dispatch, entry)
+    tidy(root, manifest)
+    return True
+
+
+def prepare(root, data=DATA, system=SYSTEM, restore=False):
+    if root.is_symlink() or not root.is_dir():
+        return False
+    fd = os.open(root, os.O_DIRECTORY | os.O_NOFOLLOW)
+    try:
+        fcntl.flock(fd, fcntl.LOCK_EX)
+        return reconcile(root, data, system, restore)
+    finally:
+        os.close(fd)
+
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--restore', action='store_true')
+    args = parser.parse_args()
+    if os.getuid() == 0:
+        parser.error('run in the desktop user session')
+    xdg = Path(os.environ.get('XDG_DATA_HOME') or Path.home() / '.local/share')
+    prepare(xdg / 'gnome-shell/extensions/blur-my-shell@aunetx', restore=args.restore)
+
+
+if __name__ == '__main__':
+    main()
