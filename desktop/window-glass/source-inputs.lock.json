@@ -1,0 +1,25 @@
+{
+  "version": 1,
+  "files": [
+    {
+      "path": "desktop/window-glass/native/upstream/mutter_50.1-0ubuntu2.5.debian.tar.xz",
+      "url": "https://launchpadlibrarian.net/879583031/mutter_50.1-0ubuntu2.5.debian.tar.xz",
+      "sha256": "50d2d9f011972576ddc4467528c49601918e5a477aa6b3e8268b9d2bf86e7d06"
+    },
+    {
+      "path": "desktop/window-glass/native/upstream/mutter_50.1-0ubuntu2.5.dsc",
+      "url": "https://launchpadlibrarian.net/879583032/mutter_50.1-0ubuntu2.5.dsc",
+      "sha256": "34db0d1aa96e0ee6c3c5bd906b14fb9ed243e0ed3ff3c01f16c0952f5907dad7"
+    },
+    {
+      "path": "desktop/window-glass/native/upstream/mutter_50.1.orig.tar.xz",
+      "url": "https://launchpadlibrarian.net/879583029/mutter_50.1.orig.tar.xz",
+      "sha256": "9344502ce473f788795f26b45f8b8ff53c0a36b867470d705a11a3ee0911021e"
+    },
+    {
+      "path": "desktop/window-glass/sources/blur-my-shell-v76.tar.gz",
+      "url": "https://codeload.github.com/aunetx/blur-my-shell/tar.gz/19ce844b8ca36efe4a181b2cf81504063eb4ce4b",
+      "sha256": "bd6fbdfe80ee2368ebe9e377ad72adba66563a5ae78f95ca620c03a947a35835"
+    }
+  ]
+}

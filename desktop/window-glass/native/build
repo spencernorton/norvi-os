@@ -1,0 +1,24 @@
+#!/bin/sh
+# SPDX-License-Identifier: GPL-3.0-or-later
+# Rebuild the exact Ubuntu source in a disposable Ubuntu amd64 builder with
+# the Mutter build dependencies installed. Only stage the two private objects.
+set -eu
+here=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
+stage=$(realpath -m -- "${1:?supply a package staging directory}")
+[ "$(dpkg --print-architecture)" = amd64 ]
+(cd "$here/upstream" && sha256sum --strict --check "$here/sources.sha256")
+scratch=$(mktemp -d)
+trap 'rm -rf -- "$scratch"' EXIT
+cd "$scratch"
+dpkg-source -x "$here/upstream/mutter_50.1-0ubuntu2.5.dsc" mutter
+cd mutter
+[ "$(dpkg-parsechangelog -S Version)" = 50.1-0ubuntu2.5 ]
+install -m644 "$here/surface-damage.patch" debian/patches/norvi-window-damage.patch
+printf '\n%s\n' norvi-window-damage.patch >> debian/patches/series
+export DEB_BUILD_PROFILES=nocheck
+export DEB_BUILD_OPTIONS="nocheck noautodbgsym parallel=${BUILD_JOBS:-4}"
+# This is a separate Debian source package. The outer dh override selects
+# NorviOS binary packages that do not exist in Ubuntu's Mutter source.
+unset DH_INTERNAL_OPTIONS DH_INTERNAL_OVERRIDE DH_OPTIONS
+dpkg-buildpackage --build=any --no-sign --no-pre-clean -d
+python3 -I "$here/install-overlay.py" "$stage" ../libmutter-18-0_50.1-0ubuntu2.5_amd64.deb

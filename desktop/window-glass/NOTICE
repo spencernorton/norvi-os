@@ -1,0 +1,6 @@
+Blur my Shell v76 comes from https://github.com/aunetx/blur-my-shell, revision
+19ce844b8ca36efe4a181b2cf81504063eb4ce4b. The accompanying archive contains
+the unmodified upstream source. Its license and translations are preserved.
+NorviTech modified the application blur component and the legacy-library
+preference notice in November 2026. The window damage tracker, renderer
+adapter and package integration are distributed under GPL-3.0-or-later.

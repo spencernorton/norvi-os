@@ -79,7 +79,7 @@ they are, so nothing on this page is a mystery.
 | On screen | Extension | Origin |
 |---|---|---|
 | The dock, centred at the bottom, blurred, and the app launcher that opens from it, with drawers you create from a right-click | [XDock](https://github.com/spencernorton/xdock) | NorviTech fork of [Dash to Dock](https://github.com/micheleg/dash-to-dock), *published* |
-| The blur behind menus and windows, with rounded corners | [Blur my Shell](https://github.com/aunetx/blur-my-shell) and [gnome-rounded-blur](https://github.com/spencernorton/gnome-rounded-blur) | The checksum-pinned upstream Blur my Shell v76; gnome-rounded-blur is the Ubuntu build of [kancko/gnome-rounded-blur](https://github.com/kancko/gnome-rounded-blur), *published* |
+| The blur behind menus and windows, with rounded corners | [Blur my Shell](https://github.com/aunetx/blur-my-shell) and [gnome-rounded-blur](https://github.com/spencernorton/gnome-rounded-blur) | The removable `norvi-window-glass` package integrates Blur my Shell v76 with the [rounded blur renderer](https://github.com/kancko/gnome-rounded-blur) |
 | Named workspaces on the left of the top bar | [Workspace Bar](https://github.com/spencernorton/workspace-bar) | NorviTech, *published* |
 | The top bar that turns transparent over the desktop, at an opacity measured from the wallpaper | [Transparent Top Bar (Auto)](https://github.com/spencernorton/transparent-top-bar) | NorviTech fork of [Transparent Top Bar](https://github.com/lamarios/gnome-shell-extension-transparent-top-bar), *published* |
 | The weather in the top bar and its forecast panel | GEweather | NorviTech fork of [SimpleWeather](https://github.com/romanlefler/SimpleWeather) |
@@ -149,37 +149,31 @@ repository:
    `norvi-os` is a metapackage. It recommends the desktop components and apps —
    XDock, gnome-rounded-blur, Workspace Bar, Transparent Top Bar (Auto), Power
    Only Quick Settings, Lock Screen Suite, Wallpaper Suite, XNote with XNote
-   Placement, SnipSnap and Timecrate — and suggests Helios. It pins no
-   versions, so each component updates on its own, and you can remove any one
-   of them without removing the rest.
+   Placement, SnipSnap, Timecrate and the window-glass engine — and suggests
+   Helios. Each component updates independently and can be removed individually.
 
-3. Install [Blur my Shell](https://github.com/aunetx/blur-my-shell) v76 from
-   its upstream release, checked against the release's SHA-256.
-   This version includes the upstream fix for repeated application-blur
-   cleanup after settings changes:
+3. When your channel offers desktop release 1.5.0, update an existing amd64
+   desktop with `sudo apt update` and `sudo apt upgrade`. With recommendations
+   enabled, the upgrade brings in `norvi-window-glass` and rounded blur 2.0.
+   For a manual installation, select both packages in that channel with
+   `sudo apt install norvi-window-glass gnome-rounded-blur`.
+   The package includes Blur my Shell v76 under its original extension ID. It
+   preserves existing settings. A customized per-user extension keeps precedence.
 
-   ```bash
-   curl -fsSLo blur-my-shell.zip https://github.com/aunetx/blur-my-shell/releases/download/v76/blur-my-shell%40aunetx.shell-extension.zip
-   echo 'fff4deaf74d384171241e2242c4034b4c2acbc9c516264d29ddbd34f7737da0e  blur-my-shell.zip' | sha256sum --check
-   gnome-extensions install --force blur-my-shell.zip
-   ```
-
-Then log out and back in once, so GNOME Shell sees the new extensions, and
-turn them on:
+GNOME loads the updated extensions at the next sign-in. Existing profiles
+keep their enabled extensions. On a fresh profile, open **Extensions** and
+enable the components you want. If you choose XDock, turn off Ubuntu Dock
+so that a single dock handles the launcher and its keyboard shortcuts.
+To enable just window glass from a terminal, run the following command.
 
 ```bash
-for uuid in blur-my-shell@aunetx xdock@spencercnorton.github.io \
-    workspace-bar@spencercnorton.github.io transparent-top-bar@spencercnorton.github.io \
-    power-only-quicksettings@spencercnorton.github.io lock-screen-suite@spencercnorton.github.io \
-    wallpaper-suite@spencercnorton.github.io xnote-placement@spencercnorton.github.io; do
-  gnome-extensions enable "$uuid"
-done
+gnome-extensions enable blur-my-shell@aunetx
 ```
 
-### The boot splash, login screen and window glass — from source
+### Apply the boot, login and per-user GTK styling
 
-The branding and the glass are not packaged yet. Install them from this
-repository:
+The packaged engine renders window backdrops. To apply the NorviOS GTK glass
+style and boot and login artwork, run the installers from this repository.
 
 ```bash
 git clone https://github.com/spencernorton/norvi-os.git
@@ -192,7 +186,7 @@ sudo ./install.sh              # boot splash, login screen and About logo, from 
 Nothing restarts; the boot splash and the login screen change from the next
 boot, and Settings shows the new logo the next time it opens.
 
-The glass needs Blur my Shell installed and enabled first (step 3 above).
+The glass needs the window glass extension enabled in the desktop session.
 Without it the desktop installer stops and says so, rather than leaving
 translucent windows over a sharp wallpaper. Run it from a terminal inside your
 desktop session: it asks GNOME Shell whether Blur my Shell is running.
@@ -253,7 +247,9 @@ bash desktop/test-blacklist-merge.sh
 bash desktop/test-uninstall-restore.sh
 bash desktop/test-install-desktop.sh           # the real installer, end to end, in a scratch HOME
 shellcheck -S warning install.sh uninstall.sh desktop/*.sh scripts/build.sh
-scripts/build.sh                               # the norvi-os .deb into dist/; needs debhelper and dpkg-dev
+sudo apt-get --no-install-recommends build-dep ./
+python3 -I desktop/window-glass/source-inputs.py fetch
+scripts/build.sh                               # the desktop packages in dist/
 ```
 
 [CI](https://github.com/spencernorton/norvi-os/actions/workflows/ci.yml) also

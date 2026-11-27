@@ -170,7 +170,9 @@ blur-my-shell is not installed, so only half of this effect can be applied.
 Translucent windows over an unblurred desktop is not the house style; it is a
 washed-out desktop. Install blur-my-shell first:
 
-    https://extensions.gnome.org/extension/3193/blur-my-shell/
+    sudo apt install norvi-window-glass
+
+Then sign out, sign back in, and enable blur-my-shell@aunetx.
 
 Or, if you actually want the stylesheet on its own:
 

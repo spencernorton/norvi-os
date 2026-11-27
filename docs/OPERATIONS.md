@@ -4,7 +4,7 @@ NorviOS is a reversible branding and glass-style layer for Ubuntu, rather
 than a separate distribution. The screenshots show a wider desktop suite;
 the `norvi-os` package installs most of the extensions pictured (the README's
 table says which are published), and this repository's installers add the
-branding and the window glass.
+branding and per-user GTK styling. The desktop package supplies the window-glass engine.
 
 ## Supported environment
 
@@ -22,14 +22,12 @@ df -h /boot
 ## Install and configure
 
 The desktop components and apps install from the NorviTech APT repository,
-in three steps:
+through APT:
 
 ```bash
 curl -fsSL https://apt.norvitech.com/setup.sh | sudo sh   # checks the key fingerprint, installs norvi-archive-keyring
 sudo apt install norvi-os                                  # the metapackage: components and apps as Recommends
-curl -fsSLo blur-my-shell.zip https://github.com/aunetx/blur-my-shell/releases/download/v76/blur-my-shell%40aunetx.shell-extension.zip
-echo 'fff4deaf74d384171241e2242c4034b4c2acbc9c516264d29ddbd34f7737da0e  blur-my-shell.zip' | sha256sum --check
-gnome-extensions install --force blur-my-shell.zip         # Blur my Shell v76, the upstream release
+
 ```
 
 The stable archive includes the metapackage and most of its components.
@@ -38,15 +36,12 @@ install instructions](../README.md#install) to use the signed candidate channel.
 
 `norvi-os` pins no versions: each component updates on its own through apt
 and unattended-upgrades, and any one of them can be removed without removing
-the metapackage. Blur my Shell is a per-user install from its upstream
-release, pinned by checksum; repeat the last three commands with a newer
-release and its checksum to update it. Log out and back in once, then enable
-the extensions (the README lists the command).
+the metapackage. Desktop releases from 1.5.0 include the v76 extension in `norvi-window-glass`. Sign out and back in, then enable the extension as described in the README. A recognized per-user v76 installation follows packaged updates. Custom extensions and disabled settings retain their existing behavior.
 
 The branding and the window glass install from this repository:
 
 ```bash
-git clone https://github.com/spencercnorton/norvi-os.git
+git clone https://github.com/spencernorton/norvi-os.git
 cd norvi-os
 # For reproducibility, check out a reviewed version tag before installation.
 sudo ./install.sh
@@ -116,3 +111,11 @@ extension for one Shell major version works on another.
 Use a demo account for public reports. Remove usernames, wallpaper metadata,
 window titles and real notes from screenshots. See [how it works](how-it-works.md)
 for the exact override points and contrast checks.
+
+## Window glass upgrades
+
+On an existing amd64 desktop, use `sudo apt update` followed by `sudo apt upgrade` once the new release appears in its configured channel. This allows APT to add the new glass recommendation while upgrading the desktop.
+
+The extension reuses cached application backdrops on a matching Ubuntu 26.04 Wayland compositor. Custom effects and fractional blur radii use their original v76 pipelines. The native component checks the installed Ubuntu packages and library hashes at login. A newer Ubuntu update starts the standard compositor until a corresponding glass build is available.
+
+To return to the standard compositor while keeping window glass, create `~/.config/norvi-window-glass/disable-native` and sign in again. Remove the file and start a new session to select the compatible native component again. To remove the packaged extension, use `sudo apt remove norvi-window-glass`. An existing supported per-user v76 installation resumes its upstream entry points. To restore those entry points immediately before removal, run `/usr/libexec/norvi-window-glass/prepare-extension --restore` in the desktop user account.

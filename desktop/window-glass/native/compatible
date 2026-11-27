@@ -1,0 +1,69 @@
+#!/usr/bin/python3 -I
+# SPDX-License-Identifier: GPL-3.0-or-later
+"""Return success only for a qualified Ubuntu GNOME Shell launch."""
+import hashlib
+import os
+from pathlib import Path
+import stat
+import subprocess
+import sys
+
+SHELL = '/usr/bin/gnome-shell'
+PRIVATE = Path('/usr/lib/x86_64-linux-gnu/norvi-window-glass')
+DATA = Path('/usr/share/norvi-window-glass/native')
+MUTTER = '50.1-0ubuntu2.5'
+SHELL_VERSION = '50.1-0ubuntu1.5'
+PACKAGES = {'libmutter-18-0:amd64': MUTTER, 'gir1.2-mutter-18:amd64': MUTTER,
+            'gnome-shell': SHELL_VERSION, 'gnome-shell-common': SHELL_VERSION}
+UBUNTU_MANIFEST = '896f54a56af9905124eae7ea5d90ad36ef7a8808dd7196ec954db728108017d0'
+PAYLOAD_PATHS = {str(PRIVATE / name) for name in ('loader-audit.so', 'libmutter-18.so.0',
+                                                  'libmutter-clutter-18.so.0')}
+
+
+def matches(manifest, *, checksum=None, paths=None):
+    contents = manifest.read_bytes()
+    if checksum and hashlib.sha256(contents).hexdigest() != checksum:
+        return False
+    rows = [line.split('  ', 1) for line in contents.decode().splitlines()]
+    if paths is not None and (len(rows) != len(paths) or {path for _, path in rows} != paths):
+        return False
+    for expected, path in rows:
+        with open(path, 'rb') as stream:
+            if hashlib.file_digest(stream, 'sha256').hexdigest() != expected:
+                return False
+    return True
+
+
+def qualifies():
+    modes = [arg for arg in sys.argv[1:] if arg.startswith('--mode')]
+    if modes != ['--mode=ubuntu'] or os.environ.get('XDG_SESSION_TYPE') != 'wayland':
+        return False
+    if any(os.environ.get(key) for key in ('LD_PRELOAD', 'LD_AUDIT', 'LD_LIBRARY_PATH',
+                                                'NORVI_WINDOW_GLASS_LAUNCH_PID')):
+        return False
+    if os.stat(SHELL).st_mode & (stat.S_ISUID | stat.S_ISGID):
+        return False
+    if 'security.capability' in os.listxattr(SHELL):
+        return False
+    config = Path(os.environ.get('XDG_CONFIG_HOME') or Path.home() / '.config')
+    if (config / 'norvi-window-glass/disable-native').exists():
+        return False
+    release = dict(line.split('=', 1) for line in Path('/etc/os-release').read_text().splitlines()
+                   if '=' in line)
+    if release.get('ID', '').strip('"') != 'ubuntu' or release.get('VERSION_CODENAME', '').strip('"') != 'resolute':
+        return False
+    result = subprocess.run(
+        ['/usr/bin/dpkg-query', '-W', '-f', '${binary:Package} ${db:Status-Status} ${Version}\\n',
+         *PACKAGES], capture_output=True, text=True, timeout=3, check=True)
+    rows = [line.split() for line in result.stdout.splitlines()]
+    if {name: version for name, status, version in rows if status == 'installed'} != PACKAGES:
+        return False
+    return matches(DATA / 'ubuntu.sha256', checksum=UBUNTU_MANIFEST) and matches(
+        DATA / 'payload.sha256', paths=PAYLOAD_PATHS)
+
+
+if __name__ == '__main__':
+    try:
+        sys.exit(0 if qualifies() else 1)
+    except (OSError, ValueError, subprocess.SubprocessError):
+        sys.exit(1)

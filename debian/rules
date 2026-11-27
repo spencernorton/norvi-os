@@ -1,3 +1,24 @@
 #!/usr/bin/make -f
+# The component stages a private library set. Ubuntu keeps ownership of the
+# system libraries, schemas and GNOME executable.
 %:
 	dh $@
+
+override_dh_auto_build:
+	:
+
+override_dh_auto_install-arch:
+	desktop/window-glass/native/build "$(CURDIR)/debian/norvi-window-glass"
+	python3 -I desktop/window-glass/install-extension.py "$(CURDIR)/debian/norvi-window-glass"
+
+override_dh_strip:
+	dh_strip --no-automatic-dbgsym
+	if test -d debian/norvi-window-glass/usr/share/norvi-window-glass/native; then python3 -I desktop/window-glass/native/install-overlay.py debian/norvi-window-glass; fi
+
+override_dh_makeshlibs:
+	# The two renderer libraries are private to this component.
+	dh_makeshlibs -Xnorvi-window-glass
+
+override_dh_shlibdeps:
+	# Ubuntu supplies the private pair's dependency set when the guard qualifies it.
+	dh_shlibdeps -Xlibmutter-18.so.0 -Xlibmutter-clutter-18.so.0

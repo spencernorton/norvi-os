@@ -19,7 +19,7 @@ apt-get update -qq
 prerequisites=(ca-certificates curl gnupg ubuntu-session gnome-shell
     gnome-control-center gdm3 plymouth-theme-spinner dconf-cli dbus-x11
     libgl1-mesa-dri libegl-mesa0 gvfs at-spi2-core unzip python3 python3-gi
-    gir1.2-gtk-4.0 piuparts debootstrap)
+    gir1.2-gtk-4.0 piuparts debootstrap apt-utils epiphany-browser xdg-user-dirs)
 # APT does not classify every TLS connection-close error as retryable. Fetch
 # prerequisites into its verified cache first, reopening failed connections.
 # No product or maintainer script is executed by these download-only retries.
@@ -53,7 +53,19 @@ fi
 if timeout 3 bash -c 'exec 3<>/dev/tcp/192.0.2.2/22'; then
     fail 'guest reached an unforwarded host service'
 fi
-apt-get install -y -t resolute-candidate norvi-os
+if [ -s companion.deb ]; then
+    # Upgrade the last desktop release with its published package relationships.
+    curl -fLsS https://github.com/spencernorton/norvi-os/releases/download/v1.4.1/norvi-os_1.4.1_all.deb -o old-desktop.deb
+    echo 'a787897b5c98b70c1340a8487c6a8d2d8fd19788cbbf556713002bdac2b16b39  old-desktop.deb' | sha256sum -c -
+    # The documented complete desktop includes components in the candidate suite.
+    # Exercise that same package set as the fresh and signed-archive paths.
+    apt-get install -y -t resolute-candidate ./old-desktop.deb
+    test "$(dpkg-query -W -f='${Version}' norvi-os)" = 1.4.1
+    test "$(dpkg-query -W -f='${db:Status-Status}' norvi-window-glass 2>/dev/null || true)" != installed
+    bash source/tests/vm/upgrade-glass.sh
+else
+    apt-get install -y -t resolute-candidate norvi-os
+fi
 dpkg-query -W > evidence/packages-installed.tsv
 apt-cache policy norvi-os > evidence/package-policy.txt
 if [ ! -f candidate.deb ] && [ -d archive ]; then
@@ -85,7 +97,15 @@ chown demo:demo evidence
 multiarch=$(python3 -c 'import sysconfig; print(sysconfig.get_config_var("MULTIARCH"))')
 GI_TYPELIB_PATH="/usr/lib/$multiarch/mutter-18"
 export GI_TYPELIB_PATH
-runuser -u demo -- bash source/tests/vm/session.sh
+if dpkg-query -W -f='${db:Status-Status}' norvi-window-glass 2>/dev/null | grep -qx installed; then
+    for profile in fresh upgrade optout; do
+        runuser -u demo -- env NORVI_GLASS_TEST_PROFILE="$profile" bash source/tests/vm/session.sh
+        cp evidence/shell.log "evidence/shell-glass-$profile.log"
+    done
+    grep -q 'NORVI-LOADER checked stock' evidence/shell-glass-optout.log
+else
+    runuser -u demo -- bash source/tests/vm/session.sh
+fi
 
 # Save the real distribution state before branding. Nothing in this comparison
 # assumes what Ubuntu's conffiles, alternatives or diversion list look like.

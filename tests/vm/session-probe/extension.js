@@ -1,6 +1,9 @@
 import GLib from 'gi://GLib';
 import Gio from 'gi://Gio';
 import GioUnix from 'gi://GioUnix';
+import GObject from 'gi://GObject';
+import Clutter from 'gi://Clutter';
+import Meta from 'gi://Meta';
 import Shell from 'gi://Shell';
 import {Extension} from 'resource:///org/gnome/shell/extensions/extension.js';
 import * as Main from 'resource:///org/gnome/shell/ui/main.js';
@@ -11,12 +14,43 @@ const wait = ms => new Promise(resolve => GLib.timeout_add(GLib.PRIORITY_DEFAULT
     return GLib.SOURCE_REMOVE;
 }));
 const check = (condition, message) => { if (!condition) throw new Error(message); };
+function checkPackagedLoader(selection) {
+    GObject.type_class_ref(Meta.WindowActor.$gtype);
+    GObject.type_class_ref(Clutter.Actor.$gtype);
+    const bounds = !!GObject.signal_lookup('damaged-with-bounds', Meta.WindowActor.$gtype);
+    const effects = !!GObject.signal_lookup('norvi-effects-changed', Clutter.Actor.$gtype);
+    const [, bytes] = GLib.file_get_contents('/proc/self/maps');
+    const maps = [...new Set(new TextDecoder().decode(bytes).split('\n')
+        .map(line => line.match(/\s(\/.*)$/)?.[1]).filter(Boolean))];
+    const native = selection === 'native';
+    const dir = '/usr/lib/x86_64-linux-gnu/';
+    const privateDir = dir + 'norvi-window-glass/';
+    for (const [stem, stockSubdir] of [['libmutter', ''], ['libmutter-clutter', 'mutter-']]) {
+        const names = new RegExp(`/${stem}-[0-9]+\\.so(?:\\.|$)`);
+        const actual = maps.filter(path => names.test(path));
+        const matched = native ? actual[0] === privateDir + stem + '-18.so.0' :
+            actual[0]?.startsWith(dir + stockSubdir) && !actual[0].includes('/norvi-window-glass/');
+        check(actual.length === 1 && matched, `Unexpected ${stem} maps: ${actual}`);
+    }
+    check(maps.includes(privateDir + 'loader-audit.so') === native, 'Unexpected native loader mapping');
+    check(selection === 'stock' || native, 'Unknown test selector');
+    check(bounds === native && effects === native, `Native signal mismatch: bounds=${bounds} effects=${effects}`);
+    check(!GLib.getenv('LD_AUDIT') && !GLib.getenv('NORVI_WINDOW_GLASS_LAUNCH_PID'),
+        'Private loader environment leaked into GNOME Shell');
+    console.log(`NORVI-LOADER checked ${selection} bounds=${bounds} effects=${effects}`);
+}
+
+let started = false;
+
 export default class Acceptance extends Extension {
     enable() {
+        if (started)
+            return;
         const run = () => {
             if (this._startupId)
                 Main.layoutManager.disconnect(this._startupId);
             this._startupId = 0;
+            started = true;
             this.run().catch(error => console.error(`NORVI-SESSION fail: ${error}\n${error.stack}`));
         };
         if (Main.layoutManager._startingUp)
@@ -30,6 +64,9 @@ export default class Acceptance extends Extension {
         this._startupId = 0;
     }
     async run() {
+        const selection = GLib.getenv('NORVI_GLASS_VM_SELECTION');
+        if (selection)
+            checkPackagedLoader(selection);
         const uuids = [
             'xdock@spencercnorton.github.io', 'workspace-bar@spencercnorton.github.io',
             'transparent-top-bar@spencercnorton.github.io', 'power-only-quicksettings@spencercnorton.github.io',
@@ -51,6 +88,21 @@ export default class Acceptance extends Extension {
         }
         const bms = Main.extensionManager.lookup('blur-my-shell@aunetx');
         check(bms?.state === 1, `Blur my Shell failed: ${bms?.state} ${bms?.error}`);
+        const profile = GLib.getenv('NORVI_GLASS_TEST_PROFILE');
+        if (['upgrade', 'fresh', 'optout'].includes(profile)) {
+            const packaged = '/usr/share/gnome-shell/extensions/blur-my-shell@aunetx';
+            const uri = Gio.File.new_for_path(packaged + '/components/applications/index.js').get_uri();
+            const {ApplicationsBlur} = await import(uri);
+            const renderer = Gio.File.new_for_path(packaged + '/components/applications/native_glass.js');
+            const {available} = await import(renderer.get_uri());
+            check(available === (selection === 'native'),
+                `Packaged renderer availability disagrees with the running Shell: ${available}`);
+            check(global.blur_my_shell?._applications_blur instanceof ApplicationsBlur,
+                'The running Shell did not instantiate the packaged application blur component');
+            check(profile === 'upgrade' ? bms.path.startsWith(GLib.get_user_data_dir() + '/') : bms.path === packaged,
+                'Unexpected extension path for this install scenario');
+            console.log(`NORVI-SESSION glass: ${profile} loaded the packaged application component`);
+        }
         Main.overview.hide();
         Main.panel.statusArea.quickSettings.menu.open();
         await wait(500);

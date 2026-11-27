@@ -2,7 +2,11 @@
 
 All notable changes to NorviOS are documented here.
 
-## Unreleased
+## 1.5.0 — 2026-11-26
+
+- Package selective application blur for Ubuntu Wayland and preserve the installed v76 desktop preferences. Other materials use their existing renderers.
+
+- Recommend Workspace Bar 1.0.4 and XDock 2.4.0 or newer. Both extensions handle overlapping settings changes when GNOME reloads them.
 
 - Stop Blur my Shell blurring behind browser web-app windows and Steam. The installer already excluded Chrome and Brave, but an installed web app or an `--app` window has a window class of its own, so those windows, Steam and its games all kept a dynamic blur, redrawn on every change around the window, behind content that is fully opaque. The new entries are `crx_*`, `brave-*`, `chrome-*`, `steam` and `steam_app_*`.
 

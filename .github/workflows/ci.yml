@@ -21,7 +21,7 @@ jobs:
   package:
     container: ubuntu:26.04@sha256:da6fc2be547864451aa253836dd926da33623312df4a9a243e35dc877c378a78
     runs-on: ubuntu-24.04
-    timeout-minutes: 10
+    timeout-minutes: 90
     env:
       DEBIAN_FRONTEND: noninteractive
     steps:
@@ -33,6 +33,12 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
+      - name: Fetch and verify pinned upstream sources
+        run: python3 -I desktop/window-glass/source-inputs.py fetch
+      - name: Desktop package build dependencies
+        run: |
+          apt-get install -y -qq --no-install-recommends gnome-shell gettext nodejs
+          apt-get -y -qq --no-install-recommends --build-profiles=nocheck build-dep ./desktop/window-glass/native/upstream/mutter_50.1-0ubuntu2.5.dsc
       - name: Contrast
         run: |
           python3 desktop/check_contrast.py
@@ -41,6 +47,10 @@ jobs:
         env:
           NORVI_TEST_PACKAGE_INSTALL: '1'
         run: python3 -m unittest discover -s tests/vm -p 'test_*.py'
+      - name: Verify user-extension upgrade and removal
+        run: |
+          python3 desktop/window-glass/tests/test-prepare.py
+          python3 desktop/window-glass/tests/test-loader.py
       - name: GTK stylesheets parse
         run: |
           python3 desktop/check_gtk_css.py
@@ -60,11 +70,15 @@ jobs:
       - name: Build the package twice and compare
         run: |
           git config --system --add safe.directory "$GITHUB_WORKSPACE"
-          SOURCE_DATE_EPOCH=$(git log -1 --format=%ct)
+          SOURCE_DATE_EPOCH=$(dpkg-parsechangelog -S Timestamp)
           export SOURCE_DATE_EPOCH
           scripts/build.sh /tmp/one
           scripts/build.sh /tmp/two
           for f in /tmp/one/*; do cmp "$f" "/tmp/two/$(basename "$f")"; done
+          dpkg-deb -x /tmp/one/norvi-window-glass_*_amd64.deb /tmp/glass-package
+          export NORVI_GLASS_TEST_EXTENSION=/tmp/glass-package/usr/share/gnome-shell/extensions/blur-my-shell@aunetx
+          python3 desktop/window-glass/tests/check-installed.py "$NORVI_GLASS_TEST_EXTENSION"
+          node --experimental-vm-modules --test desktop/window-glass/tests/norvi-glass.test.mjs
           mkdir -p dist/deb
           cp /tmp/one/*.deb dist/deb/
           (cd dist/deb && sha256sum -- *.deb > SHA256SUMS.txt)
@@ -98,7 +112,7 @@ jobs:
       - name: Install, load, operate and roll back the candidate
         run: |
           (cd candidate && sha256sum --check SHA256SUMS.txt)
-          python3 tests/vm/run.py --candidate "$(find candidate -name 'norvi-os_*_all.deb' -print -quit)" --out vm-evidence
+          python3 tests/vm/run.py --candidate "$(find candidate -name 'norvi-os_*_all.deb' -print -quit)" --companion "$(find candidate -name 'norvi-window-glass_*_amd64.deb' -print -quit)" --out vm-evidence
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         if: always()
         with:

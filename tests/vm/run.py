@@ -40,6 +40,7 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--source", type=Path, default=Path(__file__).resolve().parents[2])
     parser.add_argument("--candidate", type=Path)
+    parser.add_argument("--companion", type=Path, help="Window glass Debian from the same producer build")
     parser.add_argument("--cache", type=Path, default=Path.home() / ".cache/norvi-vm")
     parser.add_argument("--out", type=Path, required=True)
     parser.add_argument("--payload", default="tests/vm/accept.sh")
@@ -116,6 +117,11 @@ def main():
                 for item in args.source.resolve().iterdir():
                     if item.name not in {".git", "dist", ".venv", "node_modules"}:
                         archive.add(item, arcname="source/" + item.name)
+                if args.companion:
+                    companion = args.companion.resolve()
+                    archive.add(companion, arcname="companion.deb")
+                    with companion.open("rb") as packaged:
+                        result["companion_sha256"] = hashlib.file_digest(packaged, "sha256").hexdigest()
                 if args.candidate:
                     archive.add(args.candidate.resolve(), arcname="candidate.deb")
                     result["candidate_sha256"] = hashlib.file_digest(args.candidate.open("rb"), "sha256").hexdigest()

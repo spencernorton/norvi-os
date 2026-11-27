@@ -1,3 +1,11 @@
+norvi-os (1.5.0) resolute; urgency=medium
+
+  * Recommend the removable live window glass component.
+  * Support existing v76 installations and independent Ubuntu updates.
+  * Recommend the Workspace Bar and XDock fixes for extension reloads.
+
+ -- NorviTech <apt@globalentry.systems>  Thu, 26 Nov 2026 00:00:00 +0000
+
 norvi-os (1.4.1) resolute; urgency=medium
 
   * Qualify the candidate package and branding in a disposable Ubuntu VM.

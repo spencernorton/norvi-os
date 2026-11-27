@@ -33,6 +33,27 @@ under `## Unreleased` in the changelog until preparing a release.
 7. Verify download checksums and installation on a clean supported system.
    Update the website's guides and media when visible behavior changes.
 
+## Rebuild the window-glass packages
+
+Each desktop release from 1.5.0 includes the all-architecture metapackage, the
+amd64 window-glass component, the tagged project source, and the original
+Ubuntu Mutter and Blur my Shell sources. On an amd64 Ubuntu 26.04 build host
+with the Debian build dependencies installed, verify and restore the complete
+release before building.
+
+```sh
+sha256sum --check SHA256SUMS.txt
+tar -xzf source.tar.gz
+cd source
+python3 -I desktop/window-glass/source-inputs.py unpack ../upstream-source.tar.gz
+scripts/build.sh ../dist
+```
+
+The source lock records the upstream revision and digest for each input. The
+build uses the Debian changelog timestamp and runs offline after restoring those inputs. The pull request workflow
+also exercises upgrading an existing desktop and both paths for loading the
+installed extension in a clean Ubuntu guest.
+
 ## Deployment and recovery
 
 Application source and public build checks live here. Signing keys, registry
